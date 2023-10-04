@@ -75,6 +75,7 @@ from plugins.groupBan import UserBan, BanImplement, GetBanList
 from plugins.privateControl import PrivateControl, LsGroup, GroupApply, HelpInGroup
 from plugins.bilibiliSubscribe_v2 import BilibiliSubscribe, BilibiliSubscribeHelper
 from plugins.getPermission import (
+    GetPermission,
     AddPermission,
     DelPermission,
     ShowPermission,
@@ -114,6 +115,7 @@ GroupPluginList: List[StandardPlugin] = [  # 指定群启用插件
     helper,
     ShowStatus(),
     ServerMonitor(),  # 帮助
+    GetPermission(),
     PluginGroupManager(
         [
             AddPermission(),
