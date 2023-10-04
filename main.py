@@ -23,7 +23,6 @@ from plugins.superEmoji import (
     BirthdayCake,
     ff98sha,
 )
-from utils.accountOperation import create_account_sql
 from utils.basicConfigs import APPLY_GROUP_ID, APPLY_GUILD_ID
 from utils.basicEvent import warning, set_friend_add_request, set_group_add_request
 from utils.configAPI import createGlobalConfig
