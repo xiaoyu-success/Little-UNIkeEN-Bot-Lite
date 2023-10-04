@@ -89,7 +89,6 @@ def sqlInit():
     createBotDataDb()
     createApplyGroupsSql()
     createGlobalConfig()
-    create_account_sql()
 
     loadApplyGroupId()
     # removeInvalidGroupConfigs() # it may danger, consider change it to add tag
