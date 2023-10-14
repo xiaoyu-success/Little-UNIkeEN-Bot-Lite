@@ -258,7 +258,7 @@ class ff98sha(StandardPlugin):
         return {
             "name": "ff98sha",
             "description": "ff98sha是我男神",
-            "commandDescription": "ff98sha/,\\ff98sha/",
+            "commandDescription": "ff98sha,\\ff98sha/",
             "usePlace": ["group", "private"],
             "showInHelp": True,
             "pluginConfigTableNames": [],
