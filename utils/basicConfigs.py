@@ -17,9 +17,40 @@ elif BACKEND == BACKEND_TYPE.LAGRANGE:
 else:
     assert False
 
+APPLY_GROUP_ID = []
+
+APPLY_GUILD_ID = [  # deprecated
+    # ('651039383982389627', '267764859'),
+    # ('651039383982389627', '267795135'),
+]
+
+MAIN_GUILD = {  # deprecated
+    'guild_id': '',  # '651039383982389627',
+    'channels': {
+        # 'chat': '267764859',
+        # 'mdd': '267795135',
+        # 'dekt': '267800522',
+        # 'bwc': '267836446',
+        # 'jwc': '267805890',
+    }
+}
+
+JAC_COOKIE = ''  # deprecated
+
+ROOT_ADMIN_ID = [  # 请填QQ号，表示哪些人是机器人的root管理
+]
+assert len(ROOT_ADMIN_ID) > 0, '请至少指定一个用户为机器人ROOT'
+
+WARNING_ADMIN_ID = [  # 请填QQ号，表示该向哪些人报warning
+]
+
+MAIL_USER = ''  # watch dog mail to whom, not required
+MAIL_PASS = ''
+
 # BOT_SELF_QQ=get_login_info()['user_id']
 BOT_SELF_QQ = None  # bot自己qq号是多少
 assert BOT_SELF_QQ != None, 'BOT的QQ号是多少'
+
 
 VERSION_TXT = """version：muaLite版本，NJFU基于Little-UNIkeEN-Bot的muaLTS分支维护的精简版本
 本版本更新内容见GitHub(可能需要科学上网)： https://github.com/xiaoyu-success/Little-UNIkeEN-Bot-Lite/
@@ -28,7 +59,7 @@ VERSION_TXT = """version：muaLite版本，NJFU基于Little-UNIkeEN-Bot的muaLTS
 sqlConfig = {
     'host': '127.0.0.1',
     'user': 'root',
-    'passwd': '' # bot的sql密码是多少
+    'passwd': ''  # bot的sql密码是多少
 }
 assert sqlConfig.get('passwd', None) != None, '请填入bot sql的密码'
 
@@ -40,8 +71,8 @@ SAVE_TMP_PATH = 'data/tmp'
 os.makedirs(SAVE_TMP_PATH, exist_ok=True)
 
 # 画图颜色常量与文字
-BACK_CLR = {'r':(255, 232, 236, 255),'g':(219, 255, 228, 255),'h':(234, 234, 234, 255),'o':(254, 232, 199, 255)}
-FONT_CLR = {'r':(221, 0, 38, 255),'g':(0, 191, 48, 255),'h':(64, 64, 64, 255),'o':(244, 149 ,4, 255)}
+BACK_CLR = {'r': (255, 232, 236, 255), 'g': (219, 255, 228, 255), 'h': (234, 234, 234, 255), 'o': (254, 232, 199, 255)}
+FONT_CLR = {'r': (221, 0, 38, 255), 'g': (0, 191, 48, 255), 'h': (64, 64, 64, 255), 'o': (244, 149, 4, 255)}
 font_syht_m = ImageFont.truetype(os.path.join(FONTS_PATH, 'SourceHanSansCN-Normal.otf'), 18)
 font_syht_mm = ImageFont.truetype(os.path.join(FONTS_PATH, 'SourceHanSansCN-Normal.otf'), 24)
 font_syht_ml = ImageFont.truetype(os.path.join(FONTS_PATH, 'SourceHanSansCN-Normal.otf'), 32)
