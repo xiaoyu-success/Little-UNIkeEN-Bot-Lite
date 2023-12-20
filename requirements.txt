@@ -8,7 +8,6 @@ Flask
 fuzzywuzzy
 httpx
 icalendar
-jieba
 loguru
 lxml
 numpy
@@ -31,8 +30,6 @@ wordcloud
 mysql-connector-python
 pyjsparser
 websockets
-cairosvg # for chess plugin
-chess    # for chess plugin
 pyspellchecker # for wordle plugin
 imgkit # you need apt install wkhtmltox # for leetcode plugin
 pinyin # for abstract plugin

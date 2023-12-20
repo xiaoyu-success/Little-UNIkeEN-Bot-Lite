@@ -1,5 +1,6 @@
 import json
 import os
+import aiohttp
 from enum import IntEnum
 from typing import List, Any, Dict
 from websocket_server import WebsocketServer
@@ -82,8 +83,6 @@ helper = ShowHelp()  # 帮助插件
 helperForPrivateControl = HelpInGroup()  # BOT管理员查看群聊功能开启情况插件
 gocqWatchDog = GocqWatchDog(60)
 groupMessageRecorder = GroupMessageRecorder()  # 群聊消息记录插件
-getXjmcBilibili = GetBilibiliLive(30143840, '西交MC团队', '-xjmclive')
-getFdmcBilibili = GetBilibiliLive(24716629, '基岩社', '-fdmclive')
 banImpl = BanImplement()
 # BilibiliLiveMonitor(30539032, 'MUA', 'mualive')
 # GetBilibiliLive(30539032, 'MUA', '-mualive')
