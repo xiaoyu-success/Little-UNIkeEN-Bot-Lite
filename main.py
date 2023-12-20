@@ -47,6 +47,8 @@ from plugins.lottery import LotteryPlugin
 from plugins.help_v2 import ShowHelp, ShowStatus, ServerMonitor
 from plugins.groupBan import UserBan, BanImplement, GetBanList
 from plugins.privateControl import PrivateControl, LsGroup, GroupApply, HelpInGroup
+from plugins.wordle import Wordle, WordleHelper
+from plugins.handle import Handle, HandleHelper
 from plugins.bilibiliSubscribe_v2 import BilibiliSubscribe, BilibiliSubscribeHelper
 from plugins.getPermission import GetPermission, AddPermission, DelPermission, ShowPermission, AddGroupAdminToBotAdmin
 from plugins.messageRecorder import GroupMessageRecorder
@@ -113,7 +115,8 @@ GroupPluginList: List[StandardPlugin] = [  # 指定群启用插件
     PluginGroupManager([RoulettePlugin()], 'roulette'),  # 轮盘赌
     PluginGroupManager([LotteryPlugin()], 'lottery'),  # 彩票 TODO
     PluginGroupManager([BilibiliSubscribeHelper(), BilibiliSubscribe()], 'bilibili'),
-    PluginGroupManager([ShowLeetcode(), LeetcodeReport()], 'leetcode')
+    PluginGroupManager([ShowLeetcode(), LeetcodeReport()], 'leetcode'),
+    PluginGroupManager([Wordle(), WordleHelper(), Handle(), HandleHelper()], 'wordle')
 ]
 PrivatePluginList: List[StandardPlugin] = [  # 私聊启用插件
     helper,
