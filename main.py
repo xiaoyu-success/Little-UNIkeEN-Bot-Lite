@@ -127,7 +127,6 @@ PrivatePluginList: List[StandardPlugin] = [  # 私聊启用插件
     MuaAbstract(), MuaQuery(), MuaAnnHelper(), MuaAnnEditor(),
     MuaTokenBinder(), MuaTokenUnbinder(), MuaTokenEmpower(), MuaTokenLister(),
     LotteryPlugin(),
-    RandomNum(), ThreeKingdomsRandom(), TarotRandom(),
 ]
 GuildPluginList: List[GuildStandardPlugin] = [
 
