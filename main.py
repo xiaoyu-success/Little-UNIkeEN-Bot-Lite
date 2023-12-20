@@ -53,7 +53,6 @@ from plugins.messageRecorder import GroupMessageRecorder
 from plugins.addGroupRecorder import AddGroupRecorder
 from plugins.fileRecorder import GroupFileRecorder
 # from plugins.advertisement import McAdManager
-from plugins.randomNum import TarotRandom, RandomNum, ThreeKingdomsRandom
 from plugins.bilibiliLive import GetBilibiliLive, BilibiliLiveMonitor
 from plugins.leetcode import ShowLeetcode, LeetcodeReport
 from plugins.eavesdrop import Eavesdrop
