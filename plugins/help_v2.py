@@ -64,6 +64,9 @@ class ShowHelp(StandardPlugin):
             )
         else:
             imgPath = drawHelpCard(targetPluginList, group_id)
+            imgPath = (
+                imgPath if os.path.isabs(imgPath) else os.path.join(ROOT_PATH, imgPath)
+            )
             send(target, "[CQ:image,file=files:///%s]" % imgPath, data["message_type"])
         return "OK"
 
