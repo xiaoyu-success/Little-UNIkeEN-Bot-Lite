@@ -112,7 +112,6 @@ GroupPluginList: List[StandardPlugin] = [  # 指定群启用插件
                         ], 'mua'),  # MC高校联盟服务
     PluginGroupManager([RoulettePlugin()], 'roulette'),  # 轮盘赌
     PluginGroupManager([LotteryPlugin()], 'lottery'),  # 彩票 TODO
-    PluginGroupManager([RandomNum(), ThreeKingdomsRandom(), TarotRandom()], 'random'),
     PluginGroupManager([BilibiliSubscribeHelper(), BilibiliSubscribe()], 'bilibili'),
     PluginGroupManager([ShowLeetcode(), LeetcodeReport()], 'leetcode')
 ]
