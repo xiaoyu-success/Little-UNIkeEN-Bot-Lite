@@ -196,19 +196,21 @@ def eventClassify(json_data: dict) -> NoticeType:
         return NoticeType.NoProcessRequired
 
 
-def post_data(_0, _1, message):
-    # 获取事件上报
+def onMessageReceive(message: str) -> str:
     data: Dict[str, Any] = json.loads(message)
     # 筛选并处理指定事件
     flag = eventClassify(data)
-    # 群消息处理
-    if 'message' in data.keys():
+
+    # 消息格式转换
+    if BACKEND == BACKEND_TYPE.LAGRANGE and 'message' in data.keys():
         msgChain = MessageChain(data['message'])
         msgOrigin = msgChain.toCqcode()
         msg = msgOrigin.strip()
         data['message_chain'] = data['message']
         data['message'] = msgOrigin
-    if flag == NoticeType.GroupMessage:
+
+    if flag == NoticeType.GroupMessage:  # 群消息处理
+        msg = data['message'].strip()
         for event in GroupPluginList:
             event: StandardPlugin
             try:
@@ -224,19 +226,19 @@ def post_data(_0, _1, message):
         for plugin in [groupMessageRecorder]:
             plugin.recallMessage(data)
     # 频道消息处理
-    # elif flag == NoticeType.GuildMessage:
-    #     msg = data['message'].strip()
-    #     for plugin in GuildPluginList:
-    #         plugin: GuildStandardPlugin
-    #         try:
-    #             if plugin.judgeTrigger(msg, data):
-    #                 ret = plugin.executeEvent(msg, data)
-    #                 if ret != None:
-    #                     return ret
-    #         except TypeError as e:
-    #             warning("type error in main.py: {}\n\n{}".format(e, plugin))
-    #         except BaseException as e:
-    #             warning('base exception in main.py guild plugin: {}\n\n{}'.format(e, plugin))
+    elif flag == NoticeType.GuildMessage:
+        msg = data['message'].strip()
+        for plugin in GuildPluginList:
+            plugin: GuildStandardPlugin
+            try:
+                if plugin.judgeTrigger(msg, data):
+                    ret = plugin.executeEvent(msg, data)
+                    if ret != None:
+                        return ret
+            except TypeError as e:
+                warning("type error in main.py: {}\n\n{}".format(e, plugin))
+            except BaseException as e:
+                warning('base exception in main.py guild plugin: {}\n\n{}'.format(e, plugin))
     # 私聊消息处理
     elif flag == NoticeType.PrivateMessage:
         # print(data)
@@ -253,7 +255,7 @@ def post_data(_0, _1, message):
                     break
     # 上传文件处理
     elif flag == NoticeType.GroupUpload:
-        for event in [GroupFileRecorder()]:
+        for event in []:
             event.uploadFile(data)
     # 群内拍一拍回拍
     elif flag == NoticeType.GroupPoke:
@@ -294,7 +296,32 @@ def initCheck():
 
 if __name__ == '__main__':
     initCheck()
-    server = WebsocketServer("127.0.0.1", port=5706)
-    server.set_fn_message_received(post_data)
-    print('-------------You can start Lagrange Now----------------')
-    server.run_forever()
+    if BACKEND == BACKEND_TYPE.GOCQHTTP:
+        from flask import Flask, request
+
+        app = Flask(__name__)
+
+
+        @app.route('/', methods=["POST"])
+        def onMsgRecvGocq():
+            msg = request.get_data(as_text=True)
+            return onMessageReceive(msg)
+
+
+        app.run(host="127.0.0.1", port=5986)
+
+    elif BACKEND == BACKEND_TYPE.LAGRANGE:
+        from websocket_server import WebsocketServer
+
+        server = WebsocketServer("127.0.0.1", port=5706)
+
+
+        def onMsgRecvLag(_0, _1, msg):
+            onMessageReceive(msg)
+
+
+        server.set_fn_message_received(onMsgRecvLag)
+        print('-------------You can start Lagrange Now----------------')
+        server.run_forever()
+    else:
+        print('invalid backend type')
