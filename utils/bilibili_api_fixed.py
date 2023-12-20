@@ -6,7 +6,6 @@ from bilibili_api.user import API as API_USER
 from bilibili_api.live import LiveRoom
 from bilibili_api.live import API as API_LIVE
 
-
 @dataclass
 class ApiFixed:
     url: str
@@ -151,7 +150,6 @@ class ApiFixed:
             api = api.get(key)
         return cls(credential=credential, **api)
 
-
 def get_nav_fixed(credential: Union[Credential, None] = None):
     """
     获取导航
@@ -162,11 +160,7 @@ def get_nav_fixed(credential: Union[Credential, None] = None):
     Returns:
         dict: 账号相关信息
     """
-    return ApiFixed(
-        credential=credential, **get_api("credential")["info"]["valid"]
-    ).result
-
-
+    return ApiFixed(credential=credential, **get_api("credential")["info"]["valid"]).result
 def get_mixin_key_fixed() -> str:
     """
     获取混合密钥
@@ -176,80 +170,12 @@ def get_mixin_key_fixed() -> str:
     """
     data = get_nav_fixed()
     wbi_img: Dict[str, str] = data["wbi_img"]
-
-    def split(key):
-        return wbi_img.get(key).split("/")[-1].split(".")[0]
-
+    def split(key): return wbi_img.get(key).split("/")[-1].split(".")[0]
     ae = split("img_url") + split("sub_url")
-    oe = [
-        46,
-        47,
-        18,
-        2,
-        53,
-        8,
-        23,
-        32,
-        15,
-        50,
-        10,
-        31,
-        58,
-        3,
-        45,
-        35,
-        27,
-        43,
-        5,
-        49,
-        33,
-        9,
-        42,
-        19,
-        29,
-        28,
-        14,
-        39,
-        12,
-        38,
-        41,
-        13,
-        37,
-        48,
-        7,
-        16,
-        24,
-        55,
-        40,
-        61,
-        26,
-        17,
-        0,
-        1,
-        60,
-        51,
-        30,
-        4,
-        22,
-        25,
-        54,
-        21,
-        56,
-        59,
-        6,
-        63,
-        57,
-        62,
-        11,
-        36,
-        20,
-        34,
-        44,
-        52,
-    ]
+    oe = [46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35, 27, 43, 5, 49, 33, 9, 42, 19, 29, 28, 14, 39, 12, 38, 41, 13,
+          37, 48, 7, 16, 24, 55, 40, 61, 26, 17, 0, 1, 60, 51, 30, 4, 22, 25, 54, 21, 56, 59, 6, 63, 57, 62, 11, 36, 20, 34, 44, 52]
     le = reduce(lambda s, i: s + (ae[i] if i < len(ae) else ""), oe, "")
     return le[:32]
-
 
 def rollback_fixed(func):
     def wrapper(*args, **kwargs):
@@ -257,9 +183,7 @@ def rollback_fixed(func):
             return func(*args, **kwargs)
         except AttributeError:
             return request_old_fixed(*args, **kwargs)
-
     return wrapper
-
 
 @rollback_fixed
 def request_fixed(api: Api, url: str = "", params: dict = None, **kwargs) -> Any:
@@ -324,8 +248,7 @@ def request_fixed(api: Api, url: str = "", params: dict = None, **kwargs) -> Any
     if "callback" in api.params:
         # JSONP 请求
         resp_data: dict = json.loads(
-            re.match("^.*?({.*}).*$", resp.text, re.S).group(1)
-        )
+            re.match("^.*?({.*}).*$", resp.text, re.S).group(1))
     else:
         # JSON
         resp_data: dict = json.loads(resp.text)
@@ -351,14 +274,14 @@ def request_fixed(api: Api, url: str = "", params: dict = None, **kwargs) -> Any
 
 
 def request_old_fixed(
-    method: str,
-    url: str,
-    params: Union[dict, None] = None,
-    data: Any = None,
-    credential: Union[Credential, None] = None,
-    no_csrf: bool = False,
-    json_body: bool = False,
-    **kwargs,
+        method: str,
+        url: str,
+        params: Union[dict, None] = None,
+        data: Any = None,
+        credential: Union[Credential, None] = None,
+        no_csrf: bool = False,
+        json_body: bool = False,
+        **kwargs,
 ) -> Any:
     """
     向接口发送请求。
@@ -444,6 +367,7 @@ def request_old_fixed(
     # config["verify_ssl"] = False
     # config["ssl"] = False
 
+
     if True:  # try:
         resp = httpx.request(**config)
     # except Exception :
@@ -467,8 +391,7 @@ def request_old_fixed(
     if "callback" in params:
         # JSONP 请求
         resp_data = json.loads(
-            re.match("^.*?({.*}).*$", raw_data, re.S).group(1)
-        )  # type: ignore
+            re.match("^.*?({.*}).*$", raw_data, re.S).group(1))  # type: ignore
     else:
         # JSON
         resp_data = json.loads(raw_data)
@@ -491,7 +414,6 @@ def request_old_fixed(
         real_data = resp_data.get("result", None)
     return real_data
 
-
 class LiveRoomFixed(LiveRoom):
     # def __init__(self, *args, **kwargs):
     #     super(LiveRoom, self).__init__(*args, **kwargs)
@@ -502,11 +424,9 @@ class LiveRoomFixed(LiveRoom):
             api["method"], api["url"], params, credential=self.credential
         )
 
-
 class UserFixed(User):
     def __init__(self, uid: int, credential: Union[Credential, None] = None):
         super(UserFixed, self).__init__(uid, credential)
-
     def get_user_info(self) -> dict:
         api = API_USER["info"]["info"]
         params = {
@@ -515,7 +435,6 @@ class UserFixed(User):
         return request_fixed(
             "GET", url=api["url"], params=params, credential=self.credential
         )
-
     def get_videos(
         self,
         tid: int = 0,
@@ -536,7 +455,6 @@ class UserFixed(User):
         return request_fixed(
             "GET", url=api["url"], params=params, credential=self.credential
         )
-
     def get_dynamics(self, offset: int = 0, need_top: bool = False) -> dict:
         """
         获取用户动态。
@@ -573,9 +491,7 @@ class UserFixed(User):
                 card["card"] = json.loads(card["card"])
                 card["extend_json"] = json.loads(card["extend_json"])
         return data
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     liveRoom = LiveRoomFixed(24716629)
     print(liveRoom.get_room_info())
     user = UserFixed(29440965)

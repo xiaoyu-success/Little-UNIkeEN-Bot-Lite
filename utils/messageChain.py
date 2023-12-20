@@ -1,7 +1,15 @@
 from typing import List, Dict, Optional,Any
-import re, base64
+import base64
 from PIL import Image
 from io import BytesIO
+import re
+
+def imgToBase64(imgPath:str)->str:
+    img = Image.open(imgPath)
+    imgData = BytesIO()
+    img.save(imgData)
+    b64img = base64.b64encode(imgData.getvalue()).decode('utf-8')
+    return b64img
 
 def messagePieceQuote(text:str)->str:
     return text.replace('&','&amp;').replace('[','&#91;').replace(']','&#93;').replace(',','&#44;')
@@ -50,6 +58,18 @@ class MessageChain():
     cqPattern = re.compile(r'(\[CQ\:[^\[]*\])')
     def __init__(self, chain:List[Dict[str,Any]]) -> None:
         self.chain:List[Dict[str,Any]] = chain
+        
+    def convertImgPathToBase64(self):
+        result = []
+        for piece in self.chain:
+            if piece['type'].lower() == 'image':
+                path:str = piece['data'].get('file', '')
+                if path.startswith('file:///'):
+                    path = path[len('file:///'):]
+                    b64 = imgToBase64(path)
+                    piece['data']['file'] = 'base64://'+b64
+            result.append(piece)
+        self.chain = result
     
     @classmethod
     def fromCqcode(cls, cqcode:str):
@@ -95,18 +115,6 @@ class MessageChain():
                 result.append(piece)
         self.chain = result
 
-    def convertImgPathToBase64(self):
-        result = []
-        for piece in self.chain:
-            if piece['type'].lower() == 'image':
-                path:str = piece['data'].get('file', '')
-                if path.startswith('file:///'):
-                    path = path[len('file:///'):]
-                    b64 = imgToBase64(path)
-                    piece['data']['file'] = 'base64://'+b64
-            result.append(piece)
-        self.chain = result
-        
 if __name__ == '__main__':
     testCases = [
         '21[CQ:image,file=files://123]123123[CQ:reply,id=1]',

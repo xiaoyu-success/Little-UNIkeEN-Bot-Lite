@@ -116,8 +116,10 @@ def send(id: int, message: str, type:str='group')->None:
     """
     msgChain = MessageChain.fromCqcode(message)
     msgChain.removeUnsupportPiece()
+
     if True:
         msgChain.convertImgPathToBase64()
+    
     if type=='group':
         packet = {
             'action': 'send_group_msg',
