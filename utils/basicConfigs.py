@@ -28,7 +28,7 @@ WARNING_ADMIN_ID = [
 MAIL_USER = ''
 MAIL_PASS = ''
 
-BOT_SELF_QQ = 0  # bot自己qq号是多少
+BOT_SELF_QQ = 0  # bot自己qq号
 assert BOT_SELF_QQ != None, 'BOT的QQ号是多少'
 
 VERSION_TXT = """version：muaLite版本，NJFU基于Little-UNIkeEN-Bot的muaLTS分支维护的精简版本
@@ -38,7 +38,7 @@ VERSION_TXT = """version：muaLite版本，NJFU基于Little-UNIkeEN-Bot的muaLTS
 sqlConfig = {
     'host': '127.0.0.1',
     'user': 'root',
-    'passwd': ''  # bot的sql密码是多少
+    'passwd': ''  # bot的sql密码
 }
 assert sqlConfig.get('passwd', None) != None, '请填入bot sql的摩玛'
 
