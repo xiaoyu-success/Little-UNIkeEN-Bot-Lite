@@ -20,7 +20,8 @@ from plugins.autoRepoke import AutoRepoke
 from plugins.faq_v2 import MaintainFAQ, AskFAQ, HelpFAQ
 from plugins.greetings import MorningGreet, NightGreet
 from plugins.checkCoins import CheckCoins, AddAssignedCoins, CheckTransactions
-from plugins.superEmoji import FirecrackersFace, FireworksFace, BasketballFace, HotFace
+from plugins.superEmoji import FirecrackersFace, FireworksFace, BasketballFace, HotFace, FlowerFace, TouchFace, VegDog, \
+    BirthdayCake, GoHome, ff98sha
 from plugins.news import ShowNews, YesterdayNews, UpdateNewsAndReport
 from plugins.hotSearch import WeiboHotSearch, BaiduHotSearch, ZhihuHotSearch
 from plugins.signIn import SignIn
@@ -93,7 +94,9 @@ GroupPluginList: List[StandardPlugin] = [  # 指定群启用插件
     PluginGroupManager([AskFAQ(), MaintainFAQ(), HelpFAQ()], 'faq'),  # 问答库与维护
     PluginGroupManager([MorningGreet(), NightGreet()], 'greeting'),  # 早安晚安
     PluginGroupManager([CheckCoins(), AddAssignedCoins(), CheckTransactions()], 'money'),  # 查询金币,查询记录,增加金币（管理员）
-    PluginGroupManager([FireworksFace(), FirecrackersFace(), BasketballFace(), HotFace()], 'superemoji'),
+    PluginGroupManager(
+        [FireworksFace(), FirecrackersFace(), BasketballFace(), HotFace(), FlowerFace(), TouchFace(), VegDog(),
+         BirthdayCake(), GoHome(), ff98sha()], 'superemoji'),
     # 超级表情
     PluginGroupManager([ShowNews(), YesterdayNews(),
                         PluginGroupManager([UpdateNewsAndReport()], 'newsreport')], 'news'),  # 新闻
