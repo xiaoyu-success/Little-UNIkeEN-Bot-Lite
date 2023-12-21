@@ -14,17 +14,22 @@ import traceback
 import aiohttp, asyncio
 from utils.bufferQueue import BufferQueue
 from io import BytesIO
+from threading import Lock
 
 lagrangeClient = websocket.WebSocket()
+lagrangeClientGuard = Lock()
 
-
-def sendPacketToLagrange(packet: Dict[str, Any]) -> None:
+def sendPacketToLagrange(packet:Dict[str,Any])->Dict[str, Any]:
+    global lagrangeClient, lagrangeClientGuard
     if not lagrangeClient.connected:
         lagrangeClient.connect(HTTP_URL)
-    lagrangeClient.send(json.dumps(packet, ensure_ascii=False))
+    packetEncoded = json.dumps(packet, ensure_ascii=False)
+    with lagrangeClientGuard:
+        lagrangeClient.send(packetEncoded)
+        ret = lagrangeClient.recv()
+    return json.loads(ret)
 
-
-def getImgFromUrl(cqImgUrl: str) -> Optional[Image.Image]:
+def getImgFromUrl(cqImgUrl:str)->Optional[Image.Image]:
     """从cq img url中下载图片
     @cqImgUrl: 从gocqhttp获取的图片url
     @return:
@@ -44,8 +49,7 @@ def getImgFromUrl(cqImgUrl: str) -> Optional[Image.Image]:
     else:
         return None
 
-
-def get_avatar_pic(id: int) -> Union[None, bytes]:
+def get_avatar_pic(id: int)->Union[None, bytes]:
     """获取QQ头像
     @id: qq号
     @return:
@@ -58,8 +62,7 @@ def get_avatar_pic(id: int) -> Union[None, bytes]:
     else:
         return url_avatar.content
 
-
-def get_group_avatar_pic(id: int) -> Union[None, bytes]:
+def get_group_avatar_pic(id: int)->Union[None, bytes]:
     """获取群头像
     @id: 群号
     @return:
@@ -72,8 +75,7 @@ def get_group_avatar_pic(id: int) -> Union[None, bytes]:
     else:
         return url_avatar.content
 
-
-def parse_cqcode(cqcode: str) -> Optional[Tuple[str, Dict[str, str]]]:
+def parse_cqcode(cqcode:str)->Optional[Tuple[str, Dict[str,str]]]:
     """解析CQ码
     @cqcode: CQ码
     @return: 
@@ -89,7 +91,7 @@ def parse_cqcode(cqcode: str) -> Optional[Tuple[str, Dict[str, str]]]:
         return None
     result = result[0].split(',')
     cqtype = cqtypePattern.findall(result[0])
-    if len(cqtype) == 0:
+    if len(cqtype) == 0: 
         print('len cqtype == 0')
         return None
     cqtype = cqtype[0]
@@ -103,21 +105,17 @@ def parse_cqcode(cqcode: str) -> Optional[Tuple[str, Dict[str, str]]]:
         cqdict[cqkey] = cqvalue
     return cqtype, cqdict
 
-
-def gocqQuote(text: str) -> str:
+def gocqQuote(text:str)->str:
     """go-cqhttp文本转义
     参考链接： https://docs.go-cqhttp.org/cqcode/#%E8%BD%AC%E4%B9%89
     """
-    return text.replace('&', '&amp;').replace('[', '&#91;').replace(']', '&#93;').replace(',', '&#44;')
+    return text.replace('&','&amp;').replace('[','&#91;').replace(']','&#93;').replace(',','&#44;')
 
-
-groupSendBufferQueue = BufferQueue(1, 1)  # L1 cache
-groupSendBufferQueueCache = BufferQueue(3, 6)  # L2 cache
+groupSendBufferQueue = BufferQueue(1, 1) # L1 cache
+groupSendBufferQueueCache = BufferQueue(3, 6) # L2 cache
 groupSendBufferQueue.start()
 groupSendBufferQueueCache.start()
-
-
-def send(id: int, message: str, type: str = 'group') -> None:
+def send(id: int, message: str, type:str='group')->None:
     """发送消息
     id: 群号或者私聊对象qq号
     message: 消息
@@ -127,7 +125,7 @@ def send(id: int, message: str, type: str = 'group') -> None:
     msgChain.removeUnsupportPiece()
     if True:
         msgChain.convertImgPathToBase64()
-    if type == 'group':
+    if type=='group':
         packet = {
             'action': 'send_group_msg',
             'params': {
@@ -135,12 +133,10 @@ def send(id: int, message: str, type: str = 'group') -> None:
                 "message": msgChain.chain
             },
         }
-
         def cachedDo(packet):
             groupSendBufferQueueCache.put(sendPacketToLagrange, (packet,), )
-
         groupSendBufferQueue.put(cachedDo, (packet,))
-    elif type == 'private':
+    elif type=='private':
         packet = {
             'action': 'send_private_msg',
             'params': {
@@ -151,60 +147,51 @@ def send(id: int, message: str, type: str = 'group') -> None:
         sendPacketToLagrange(packet)
     print(packet)
 
-
-async def aioSend(id: int, message: str, type: str = 'group') -> None:
+async def aioSend(id: int, message: str, type:str='group')->None:
     raise Exception("No longer Support")
 
+def get_group_list()->list:
+    packet = {
+        'action': 'get_group_list',
+        'params': {}
+    }
+    result = sendPacketToLagrange(packet)
+    print(result)
 
-def get_group_list() -> list:
+def get_group_msg_history(group_id: int, message_seq: Union[int, None]=None)->list:
+    raise Exception("no longer support")
+    
+def get_essence_msg_list(group_id: int)->list:
+    raise Exception("no longer support")
+    
+def set_friend_add_request(flag, approve=True)->None:
+    raise Exception("no longer support")
+    
+def get_group_file_system_info(group_id: int)->dict:
     raise Exception("no longer support")
 
-
-def get_group_msg_history(group_id: int, message_seq: Union[int, None] = None) -> list:
+def get_group_root_files(group_id: int)->dict:
     raise Exception("no longer support")
 
-
-def get_essence_msg_list(group_id: int) -> list:
+def get_group_files_by_folder(group_id: int, folder_id: str)->dict:
     raise Exception("no longer support")
 
-
-def set_friend_add_request(flag, approve=True) -> None:
+def get_group_member_info(group_id: int, user_id: int, no_cache: bool=False)->Union[dict, None]:
     raise Exception("no longer support")
 
-
-def get_group_file_system_info(group_id: int) -> dict:
+def isGroupOwner(group_id:int, user_id:int)->bool:
     raise Exception("no longer support")
 
-
-def get_group_root_files(group_id: int) -> dict:
+def get_group_member_list(group_id:int, no_cache:bool=False)->Union[None, dict]:
     raise Exception("no longer support")
 
-
-def get_group_files_by_folder(group_id: int, folder_id: str) -> dict:
+def get_group_file_url(group_id: int, file_id: str, busid: int)-> Union[str, None]:
     raise Exception("no longer support")
 
-
-def get_group_member_info(group_id: int, user_id: int, no_cache: bool = False) -> Union[dict, None]:
+def upload_group_file(group_id:int, file:str, name:str, folder:str)->None:
     raise Exception("no longer support")
 
-
-def isGroupOwner(group_id: int, user_id: int) -> bool:
-    raise Exception("no longer support")
-
-
-def get_group_member_list(group_id: int, no_cache: bool = False) -> Union[None, dict]:
-    raise Exception("no longer support")
-
-
-def get_group_file_url(group_id: int, file_id: str, busid: int) -> Union[str, None]:
-    raise Exception("no longer support")
-
-
-def upload_group_file(group_id: int, file: str, name: str, folder: str) -> None:
-    raise Exception("no longer support")
-
-
-def set_group_ban(group_id: int, user_id: int, duration: int) -> None:
+def set_group_ban(group_id:int, user_id:int, duration:int)->None:
     """群组单人禁言
     @group_id: 群号
     @user_id:  用户QQ号
@@ -224,23 +211,19 @@ def set_group_ban(group_id: int, user_id: int, duration: int) -> None:
     except BaseException as e:
         warning("base exception in set_group_ban: {}".format(e))
 
-
-def get_group_system_msg() -> Optional[Dict[str, List[Dict[str, Any]]]]:
+def get_group_system_msg()->Optional[Dict[str, List[Dict[str, Any]]]]:
     raise Exception("no longer support")
 
-
-def set_group_add_request(flag: str, sub_type: str, approve: bool, reason: str = "") -> None:
+def set_group_add_request(flag: str, sub_type: str, approve: bool, reason: str="")->None:
     raise Exception("no longer support")
-
 
 warningBufferQueue = BufferQueue(3, 1)
 warningBufferQueue.start()
 
-
-def warning(what: str) -> None:
+def warning(what:str)->None:
     """warning to admins"""
     stack = traceback.format_exc()
-    what = '[warning]\n' + what
+    what = '[warning]\n' + what 
     what += '\n\n[location]\n' + stack
     admin_users = WARNING_ADMIN_ID
     admin_groups = []
@@ -252,39 +235,33 @@ def warning(what: str) -> None:
         warningBufferQueue.put(send, args=(admin, what, 'group'))
         # send(admin, what, 'group')
 
-
-def startswith_in(msg, checklist) -> bool:
+def startswith_in(msg, checklist)->bool:
     """判断字符串是否以checkList中的内容开头"""
     for i in checklist:
         if msg.startswith(i):
             return True
     return False
 
-
 # 画图相关
-def draw_rounded_rectangle(img, x1, y1, x2, y2, fill, r=7):
+def draw_rounded_rectangle(img, x1, y1, x2, y2, fill, r=7): 
     draw = ImageDraw.Draw(img)
-    draw.ellipse((x1, y1, x1 + 2 * r, y1 + 2 * r), fill=fill)
-    draw.ellipse((x2 - 2 * r, y1, x2, y1 + 2 * r), fill=fill)
-    draw.ellipse((x1, y2 - 2 * r, x1 + 2 * r, y2), fill=fill)
-    draw.ellipse((x2 - 2 * r, y2 - 2 * r, x2, y2), fill=fill)
-    draw.rectangle((x1 + r, y1, x2 - r, y2), fill=fill)
-    draw.rectangle((x1, y1 + r, x2, y2 - r), fill=fill)
-    return (img)
-
+    draw.ellipse((x1, y1, x1+2*r, y1+2*r), fill=fill)
+    draw.ellipse((x2-2*r, y1, x2, y1+2*r), fill=fill)
+    draw.ellipse((x1, y2-2*r, x1+2*r, y2), fill=fill)
+    draw.ellipse((x2-2*r, y2-2*r, x2, y2), fill=fill)
+    draw.rectangle((x1+r,y1,x2-r,y2),fill=fill)
+    draw.rectangle((x1,y1+r,x2,y2-r),fill=fill)
+    return(img)
 
 def init_image_template(title, width, height, clr):
     img = Image.new('RGBA', (width, height), (235, 235, 235, 255))
     draw = ImageDraw.Draw(img)
-    txt_size = draw.textsize(title, font=font_hywh_85w_ms)
-    img = draw_rounded_rectangle(img, x1=width / 2 - txt_size[0] / 2 - 15, y1=40, x2=width / 2 + txt_size[0] / 2 + 15,
-                                 y2=txt_size[1] + 70, fill=clr)
-    draw.text((width / 2 - txt_size[0] / 2, 55), title, fill=(255, 255, 255, 255), font=font_hywh_85w_ms)
-    txt_size = draw.textsize('Powered By Little-UNIkeEN-Bot', font=font_syhtmed_18)
-    draw.text((width / 2 - txt_size[0] / 2, height - 50), 'Powered By Little-UNIkeEN-Bot', fill=(115, 115, 115, 255),
-              font=font_syhtmed_18)
+    txt_size = draw.textsize(title,font=font_hywh_85w_ms)
+    img = draw_rounded_rectangle(img, x1=width/2-txt_size[0]/2-15, y1=40, x2=width/2+txt_size[0]/2+15,y2=txt_size[1]+70, fill=clr)
+    draw.text((width/2-txt_size[0]/2,55), title, fill=(255,255,255,255), font=font_hywh_85w_ms)
+    txt_size = draw.textsize('Powered By Little-UNIkeEN-Bot',font=font_syhtmed_18)
+    draw.text((width/2-txt_size[0]/2, height-50), 'Powered By Little-UNIkeEN-Bot', fill=(115,115,115,255), font = font_syhtmed_18)
     return img, draw, txt_size[1]
-
 
 # 语音相关
 def send_genshin_voice(sentence):

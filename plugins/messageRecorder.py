@@ -24,7 +24,7 @@ def getLatestRecordSeq():
 def getGroupMessageHistory(group_id: int, message_seq: Union[int, None]=None)->list:
     """获取聊天记录
     @group_id: 群号
-    @message_seq:
+    @message_seq: 
         if None: 获取最新19条消息记录
         else:    获取包含左开右闭区间(message_seq, latest_seq]的消息记录列表
     @return: 消息记录列表
@@ -166,7 +166,7 @@ class GroupMessageRecorder(StandardPlugin, RecallMessageStandardPlugin):
             'description': '记录群聊消息',
             'commandDescription': '',
             'usePlace': ['group', 'group_recall'],
-            'showInHelp': False,
+            'showInHelp': False,                
             'pluginConfigTableNames': ['messageRecord', ],
             'version': '1.0.0',
             'author': 'Unicorn',
