@@ -1,33 +1,31 @@
-import json
 import os
-import aiohttp
+import asyncio, json
 from enum import IntEnum
-from typing import List, Any, Dict
-from websocket_server import WebsocketServer
-from plugins.greetings import MorningGreet, NightGreet
-from utils.basicConfigs import APPLY_GROUP_ID, APPLY_GUILD_ID, BACKEND, BACKEND_TYPE
-from plugins.autoRepoke import AutoRepoke
-from plugins.checkCoins import CheckCoins, AddAssignedCoins, CheckTransactions
-from plugins.faq_v2 import MaintainFAQ, AskFAQ, HelpFAQ
-from plugins.hotSearch import WeiboHotSearch, BaiduHotSearch, ZhihuHotSearch
-from plugins.news import ShowNews, YesterdayNews, UpdateNewsAndReport
-from plugins.signIn import SignIn
-from plugins.sjmcStatus_v4 import ShowMcStatus, McStatusAddServer, McStatusRemoveServer, McStatusSetFooter, \
-    McStatusRemoveFooter
-from plugins.superEmoji import FirecrackersFace, FireworksFace, BasketballFace, HotFace
-from utils.accountOperation import create_account_sql
-from utils.basicConfigs import APPLY_GROUP_ID, APPLY_GUILD_ID
-from utils.basicEvent import warning, set_friend_add_request, set_group_add_request
-from utils.configAPI import createGlobalConfig
-from utils.configsLoader import createApplyGroupsSql, loadApplyGroupId
-from utils.messageChain import MessageChain
-from utils.sqlUtils import createBotDataDb
+from typing import List, Tuple, Any, Dict
 from utils.standardPlugin import NotPublishedException
+from utils.basicConfigs import APPLY_GROUP_ID, APPLY_GUILD_ID, BACKEND, BACKEND_TYPE
+from utils.configsLoader import createApplyGroupsSql, loadApplyGroupId
+from utils.accountOperation import create_account_sql
 from utils.standardPlugin import (
     StandardPlugin, PluginGroupManager, EmptyPlugin,
     PokeStandardPlugin, AddGroupStandardPlugin,
-    GuildStandardPlugin
+    EmptyAddGroupPlugin, GuildStandardPlugin
 )
+from utils.sqlUtils import createBotDataDb
+from utils.configAPI import createGlobalConfig, removeInvalidGroupConfigs
+from utils.basicEvent import get_group_list, warning, set_friend_add_request, set_group_add_request
+from utils.messageChain import MessageChain
+
+from plugins.autoRepoke import AutoRepoke
+from plugins.faq_v2 import MaintainFAQ, AskFAQ, HelpFAQ
+from plugins.greetings import MorningGreet, NightGreet
+from plugins.checkCoins import CheckCoins, AddAssignedCoins, CheckTransactions
+from plugins.superEmoji import FirecrackersFace, FireworksFace, BasketballFace, HotFace
+from plugins.news import ShowNews, YesterdayNews, UpdateNewsAndReport
+from plugins.hotSearch import WeiboHotSearch, BaiduHotSearch, ZhihuHotSearch
+from plugins.signIn import SignIn
+from plugins.sjmcStatus_v4 import ShowMcStatus, McStatusAddServer, McStatusRemoveServer, McStatusSetFooter, \
+    McStatusRemoveFooter
 
 try:
     from plugins.mua import (MuaAnnHelper, MuaAnnEditor,
@@ -45,20 +43,21 @@ except NotPublishedException as e:
 from plugins.roulette import RoulettePlugin
 from plugins.lottery import LotteryPlugin
 from plugins.help_v2 import ShowHelp, ShowStatus, ServerMonitor
-from plugins.groupBan import UserBan, BanImplement, GetBanList
+from plugins.groupBan import GroupBan, UserBan, BanImplement, GetBanList
 from plugins.privateControl import PrivateControl, LsGroup, GroupApply, HelpInGroup
-from plugins.wordle import Wordle, WordleHelper
-from plugins.handle import Handle, HandleHelper
 from plugins.bilibiliSubscribe_v2 import BilibiliSubscribe, BilibiliSubscribeHelper
 from plugins.getPermission import GetPermission, AddPermission, DelPermission, ShowPermission, AddGroupAdminToBotAdmin
+# from plugins.goBang import GoBangPlugin
 from plugins.messageRecorder import GroupMessageRecorder
 from plugins.addGroupRecorder import AddGroupRecorder
 from plugins.fileRecorder import GroupFileRecorder
 # from plugins.advertisement import McAdManager
 from plugins.bilibiliLive import GetBilibiliLive, BilibiliLiveMonitor
+from plugins.wordle import Wordle, WordleHelper
+from plugins.handle import Handle, HandleHelper
+from plugins.emojiKitchen import EmojiKitchen
 from plugins.leetcode import ShowLeetcode, LeetcodeReport
 from plugins.eavesdrop import Eavesdrop
-
 from plugins.gocqWatchDog import GocqWatchDog
 
 
@@ -85,9 +84,6 @@ helperForPrivateControl = HelpInGroup()  # BOT管理员查看群聊功能开启�
 gocqWatchDog = GocqWatchDog(60)
 groupMessageRecorder = GroupMessageRecorder()  # 群聊消息记录插件
 banImpl = BanImplement()
-# BilibiliLiveMonitor(30539032, 'MUA', 'mualive')
-# GetBilibiliLive(30539032, 'MUA', '-mualive')
-
 GroupPluginList: List[StandardPlugin] = [  # 指定群启用插件
     groupMessageRecorder, banImpl,
     helper, ShowStatus(), ServerMonitor(),  # 帮助
@@ -97,11 +93,15 @@ GroupPluginList: List[StandardPlugin] = [  # 指定群启用插件
     PluginGroupManager([AskFAQ(), MaintainFAQ(), HelpFAQ()], 'faq'),  # 问答库与维护
     PluginGroupManager([MorningGreet(), NightGreet()], 'greeting'),  # 早安晚安
     PluginGroupManager([CheckCoins(), AddAssignedCoins(), CheckTransactions()], 'money'),  # 查询金币,查询记录,增加金币（管理员）
-    PluginGroupManager([FireworksFace(), FirecrackersFace(), BasketballFace(), HotFace(), ], 'superemoji'),  # 超级表情
+    PluginGroupManager([FireworksFace(), FirecrackersFace(), BasketballFace(), HotFace()], 'superemoji'),
+    # 超级表情
     PluginGroupManager([ShowNews(), YesterdayNews(),
                         PluginGroupManager([UpdateNewsAndReport()], 'newsreport')], 'news'),  # 新闻
     PluginGroupManager([WeiboHotSearch(), BaiduHotSearch(), ZhihuHotSearch(), ], 'hotsearch'),
     PluginGroupManager([SignIn()], 'signin'),  # 签到
+    # PluginGroupManager([
+    #                     # PluginGroupManager([McAdManager()], 'mcad')# 新生群mc广告播报
+    #                     ], 'nlmc'),  # MC社服务
     PluginGroupManager(
         [ShowMcStatus(), McStatusAddServer(), McStatusRemoveServer(), McStatusSetFooter(), McStatusRemoveFooter()
          ], 'mcs'),  # MC服务器列表for MUA
@@ -115,8 +115,10 @@ GroupPluginList: List[StandardPlugin] = [  # 指定群启用插件
     PluginGroupManager([RoulettePlugin()], 'roulette'),  # 轮盘赌
     PluginGroupManager([LotteryPlugin()], 'lottery'),  # 彩票 TODO
     PluginGroupManager([BilibiliSubscribeHelper(), BilibiliSubscribe()], 'bilibili'),
+    PluginGroupManager([Wordle(), WordleHelper(), Handle(), HandleHelper()], 'wordle'),
+    PluginGroupManager([EmojiKitchen()], 'emoji'),
     PluginGroupManager([ShowLeetcode(), LeetcodeReport()], 'leetcode'),
-    PluginGroupManager([Wordle(), WordleHelper(), Handle(), HandleHelper()], 'wordle')
+    # PluginGroupManager([], 'arxiv'),
 ]
 PrivatePluginList: List[StandardPlugin] = [  # 私聊启用插件
     helper,
@@ -129,9 +131,10 @@ PrivatePluginList: List[StandardPlugin] = [  # 私聊启用插件
     MuaAbstract(), MuaQuery(), MuaAnnHelper(), MuaAnnEditor(),
     MuaTokenBinder(), MuaTokenUnbinder(), MuaTokenEmpower(), MuaTokenLister(),
     LotteryPlugin(),
+    EmojiKitchen(),
+    # ChooseSong(),
 ]
 GuildPluginList: List[GuildStandardPlugin] = [
-
 ]
 GroupPokeList: List[PokeStandardPlugin] = [
     AutoRepoke(),  # 自动回复拍一拍
@@ -258,7 +261,7 @@ def onMessageReceive(message: str) -> str:
                     break
     # 上传文件处理
     elif flag == NoticeType.GroupUpload:
-        for event in []:
+        for event in [GroupFileRecorder()]:
             event.uploadFile(data)
     # 群内拍一拍回拍
     elif flag == NoticeType.GroupPoke:
