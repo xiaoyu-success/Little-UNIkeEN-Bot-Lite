@@ -90,7 +90,7 @@ GroupPluginList: List[StandardPlugin] = [  # 指定群启用插件
     helper, ShowStatus(), ServerMonitor(),  # 帮助
     GetPermission(), Eavesdrop(),
     PluginGroupManager([AddPermission(), DelPermission(), ShowPermission(), AddGroupAdminToBotAdmin(),
-                        UserBan(banImpl), GetBanList()], 'permission'),  # 权限
+                        UserBan(banImpl), GetBanList(), GroupBan()], 'permission'),  # 权限
     PluginGroupManager([AskFAQ(), MaintainFAQ(), HelpFAQ()], 'faq'),  # 问答库与维护
     PluginGroupManager([MorningGreet(), NightGreet()], 'greeting'),  # 早安晚安
     PluginGroupManager([CheckCoins(), AddAssignedCoins(), CheckTransactions()], 'money'),  # 查询金币,查询记录,增加金币（管理员）
