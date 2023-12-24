@@ -180,9 +180,10 @@ class McStatusRemoveServer(StandardPlugin):
     def executeEvent(self, msg: str, data: Any) -> Union[None, str]:
         groupId = data['group_id']
         userId = data['user_id']
-        admins = set(u['user_id'] for u in get_group_member_list(groupId) if u['role'] in ['admin', 'owner']).union(
-            getGroupAdmins(groupId)
-        )
+        # admins = set(u['user_id'] for u in get_group_member_list(groupId) if u['role'] in ['admin', 'owner']).union(
+        #     getGroupAdmins(groupId)
+        # )
+        admins = getGroupAdmins(groupId)
         if userId not in admins:
             send(groupId, '[CQ:reply,id=%d]权限检查失败。该指令仅允许群管理员触发。'%data['message_id'], data['message_type'])
             return 'OK'
@@ -213,9 +214,10 @@ class McStatusAddServer(StandardPlugin):
     def executeEvent(self, msg: str, data: Any) -> Union[None, str]:
         groupId = data['group_id']
         userId = data['user_id']
-        admins = set(u['user_id'] for u in get_group_member_list(groupId) if u['role'] in ['admin', 'owner']).union(
-            getGroupAdmins(groupId)
-        )
+        # admins = set(u['user_id'] for u in get_group_member_list(groupId) if u['role'] in ['admin', 'owner']).union(
+        #     getGroupAdmins(groupId)
+        # )
+        admins = getGroupAdmins(groupId)
         if userId not in admins:
             send(groupId, '[CQ:reply,id=%d]权限检查失败。该指令仅允许群管理员触发。'%data['message_id'], data['message_type'])
             return 'OK'
@@ -279,9 +281,10 @@ class McStatusSetFooter(StandardPlugin):
     def executeEvent(self, msg: str, data: Any) -> Union[None, str]:
         groupId = data['group_id']
         userId = data['user_id']
-        admins = set(u['user_id'] for u in get_group_member_list(groupId) if u['role'] in ['admin', 'owner']).union(
-            getGroupAdmins(groupId)
-        )
+        # admins = set(u['user_id'] for u in get_group_member_list(groupId) if u['role'] in ['admin', 'owner']).union(
+        #     getGroupAdmins(groupId)
+        # )
+        admins = getGroupAdmins(groupId)
         if userId not in admins:
             send(groupId, '[CQ:reply,id=%d]权限检查失败。该指令仅允许群管理员触发。'%data['message_id'], data['message_type'])
             return 'OK'

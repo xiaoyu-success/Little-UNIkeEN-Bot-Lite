@@ -1,3 +1,4 @@
+from utils.configAPI import getGroupAdmins
 from utils.standardPlugin import StandardPlugin, CronStandardPlugin, Job
 from utils.sqlUtils import newSqlSession
 from utils.basicEvent import send, warning, gocqQuote
@@ -285,6 +286,14 @@ class BilibiliSubscribe(StandardPlugin):
 
     def executeEvent(self, msg: str, data: Any) -> Union[None, str]:
         group_id = data['group_id']
+        userId = data['user_id']
+        # admins = set(u['user_id'] for u in get_group_member_list(groupId) if u['role'] in ['admin', 'owner']).union(
+        #     getGroupAdmins(groupId)
+        # )
+        admins = getGroupAdmins(group_id)
+        if userId not in admins:
+            send(group_id, '[CQ:reply,id=%d]权限检查失败。该指令仅允许群管理员触发。'%data['message_id'], data['message_type'])
+            return 'OK'
         if self.pattern1.match(msg) != None:
             uid = self.pattern1.findall(msg)[0]
             uid = int(uid)
