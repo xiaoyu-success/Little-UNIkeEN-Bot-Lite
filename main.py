@@ -213,6 +213,7 @@ def onMessageReceive(message: str) -> str:
     # 消息格式转换
     if BACKEND == BACKEND_TYPE.LAGRANGE and 'message' in data.keys():
         msgChain = MessageChain(data['message'])
+        msgChain.fixLagrangeImgUrl()
         msgOrigin = msgChain.toCqcode()
         msg = msgOrigin.strip()
         data['message_chain'] = data['message']
@@ -288,15 +289,17 @@ def initCheck():
     # do some check
     for p in GroupPluginList:
         infoDict = p.getPluginInfo()
-        assert 'name' in infoDict.keys() and 'description' in infoDict.keys() \
-               and 'commandDescription' in infoDict.keys() and 'usePlace' in infoDict.keys()
+        if not p.initCheck():
+            print(f'{infoDict} init check failed!')
+            exit(1)
         if 'group' not in infoDict['usePlace']:
             print("plugin [{}] can not be used in group talk!".format(infoDict['name']))
             exit(1)
     for p in PrivatePluginList:
         infoDict = p.getPluginInfo()
-        assert 'name' in infoDict.keys() and 'description' in infoDict.keys() \
-               and 'commandDescription' in infoDict.keys() and 'usePlace' in infoDict.keys()
+        if not p.initCheck():
+            print(f'{infoDict} init check failed!')
+            exit(1)
         if 'private' not in infoDict['usePlace']:
             print("plugin [{}] can not be used in private talk!".format(infoDict['name']))
             exit(1)
@@ -318,7 +321,6 @@ if __name__ == '__main__':
 
 
         app.run(host="127.0.0.1", port=5986)
-
     elif BACKEND == BACKEND_TYPE.LAGRANGE:
         from websocket_server import WebsocketServer
 

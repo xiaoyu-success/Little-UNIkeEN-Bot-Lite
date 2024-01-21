@@ -36,11 +36,7 @@ def createMuaSessionIdSql():
         `ann_key` char(64) comment 'announce标识主键',
         `abstract` bool default false comment '是否查询mua通知摘要',
         primary key(`session_id`)
-    );"""
-    )
-
-
-createMuaSessionIdSql()
+    );""")
 
 
 def dumpMuaSession(sessionId: str, data: Any, annKey: str, abstract: bool = False):
