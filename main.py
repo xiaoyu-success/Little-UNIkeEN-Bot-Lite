@@ -1,4 +1,18 @@
 import os
+import argparse
+import json
+from utils.basicConfigs import setConfigs
+config = None
+if __name__ == '__main__':
+    # 为了兼容之前的代码这么写的，太丑了，下次一定重构
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, required=False, default=None)
+    args = parser.parse_args()
+    if args.config != None:
+        with open(args.config, 'r') as f:
+            config = json.load(f)
+        setConfigs(config)
+
 import asyncio, json
 from enum import IntEnum
 from typing import List, Tuple, Any, Dict
@@ -59,6 +73,8 @@ from plugins.handle import Handle, HandleHelper
 from plugins.emojiKitchen import EmojiKitchen
 from plugins.leetcode import ShowLeetcode, LeetcodeReport
 from plugins.eavesdrop import Eavesdrop
+from plugins.moyu import GetMoyuCalendar, UpdateMoyuCalendar
+
 from plugins.gocqWatchDog import GocqWatchDog
 
 
@@ -90,17 +106,15 @@ GroupPluginList: List[StandardPlugin] = [  # 指定群启用插件
     helper, ShowStatus(), ServerMonitor(),  # 帮助
     GetPermission(), Eavesdrop(),
     PluginGroupManager([AddPermission(), DelPermission(), ShowPermission(), AddGroupAdminToBotAdmin(),
-                        UserBan(banImpl), GetBanList(), GroupBan()], 'permission'),  # 权限
-    PluginGroupManager([AskFAQ(), MaintainFAQ(), HelpFAQ()], 'faq'),  # 问答库与维护
-    PluginGroupManager([MorningGreet(), NightGreet()], 'greeting'),  # 早安晚安
-    PluginGroupManager([CheckCoins(), AddAssignedCoins(), CheckTransactions()], 'money'),  # 查询金币,查询记录,增加金币（管理员）
-    PluginGroupManager(
-        [FireworksFace(), FirecrackersFace(), BasketballFace(), HotFace(), FlowerFace(), TouchFace(), VegDog(),
-         BirthdayCake(), GoHome(), ff98sha()], 'superemoji'),
-    # 超级表情
-    PluginGroupManager([ShowNews(), YesterdayNews(),
-                        PluginGroupManager([UpdateNewsAndReport()], 'newsreport')], 'news'),  # 新闻
-    PluginGroupManager([WeiboHotSearch(), BaiduHotSearch(), ZhihuHotSearch(), ], 'hotsearch'),
+                        UserBan(banImpl), GetBanList()], 'permission'), # 权限
+    PluginGroupManager([AskFAQ(), MaintainFAQ(), HelpFAQ()],'faq'), # 问答库与维护
+    PluginGroupManager([GroupCalendarHelper(), GroupCalendarManager()], 'calendar'),
+    PluginGroupManager([MorningGreet(), NightGreet()], 'greeting'), # 早安晚安
+    PluginGroupManager([CheckCoins(), AddAssignedCoins(),CheckTransactions()],'money'), # 查询金币,查询记录,增加金币（管理员）
+    PluginGroupManager([FireworksFace(), FirecrackersFace(), BasketballFace(), HotFace(), ], 'superemoji'), # 超级表情
+    PluginGroupManager([ShowNews(), YesterdayNews(), 
+                        PluginGroupManager([UpdateNewsAndReport()], 'newsreport')],'news'),  # 新闻
+    PluginGroupManager([WeiboHotSearch(), BaiduHotSearch(), ZhihuHotSearch(),], 'hotsearch'),
     PluginGroupManager([SignIn()], 'signin'),  # 签到
     # PluginGroupManager([
     #                     # PluginGroupManager([McAdManager()], 'mcad')# 新生群mc广告播报
@@ -118,10 +132,21 @@ GroupPluginList: List[StandardPlugin] = [  # 指定群启用插件
     PluginGroupManager([RoulettePlugin()], 'roulette'),  # 轮盘赌
     PluginGroupManager([LotteryPlugin()], 'lottery'),  # 彩票 TODO
     PluginGroupManager([BilibiliSubscribeHelper(), BilibiliSubscribe()], 'bilibili'),
+    PluginGroupManager([ChineseChessPlugin(), ChineseChessHelper()], 'cchess'),
+<<<<<<<<< Temporary merge branch 1
+    PluginGroupManager([ShowLeetcode(), LeetcodeReport()], 'leetcode')
+=========
+    PluginGroupManager([ChessPlugin(), ChessHelper()], 'chess'),
+    PluginGroupManager([ApexStatusPlugin()], 'apex'),
+    # PluginGroupManager([ChooseSong()], 'song'),
     PluginGroupManager([Wordle(), WordleHelper(), Handle(), HandleHelper()], 'wordle'),
+    PluginGroupManager([GetNiuChaoYue(), NiuChaoYueMonitor(), GroupBan(),
+                        GetBilibiliLive(22797301, 'SJTU计算机系', '-sjcs'),
+                        BilibiliLiveMonitor(22797301,'SJTU计算机系', 'test')], 'test'),
     PluginGroupManager([EmojiKitchen()], 'emoji'),
     PluginGroupManager([ShowLeetcode(), LeetcodeReport()], 'leetcode'),
     # PluginGroupManager([], 'arxiv'),
+>>>>>>>>> Temporary merge branch 2
 ]
 PrivatePluginList: List[StandardPlugin] = [  # 私聊启用插件
     helper,
@@ -137,10 +162,11 @@ PrivatePluginList: List[StandardPlugin] = [  # 私聊启用插件
     EmojiKitchen(),
     # ChooseSong(),
 ]
-GuildPluginList: List[GuildStandardPlugin] = [
+GuildPluginList:List[GuildStandardPlugin] = [
+
 ]
-GroupPokeList: List[PokeStandardPlugin] = [
-    AutoRepoke(),  # 自动回复拍一拍
+GroupPokeList:List[PokeStandardPlugin] = [
+    AutoRepoke(), # 自动回复拍一拍
 ]
 AddGroupVerifyPluginList: List[AddGroupStandardPlugin] = [
     AddGroupRecorder(),  # place this plugin to the first place
@@ -153,6 +179,7 @@ class NoticeType(IntEnum):
     NoProcessRequired = 0
     GroupMessageNoProcessRequired = 1
     GuildMessageNoProcessRequired = 2
+    PrivateMessageNoProcessRequired = 3
     GocqHeartBeat = 5
     GroupMessage = 11
     GroupPoke = 12
@@ -173,14 +200,19 @@ def eventClassify(json_data: dict) -> NoticeType:
         return NoticeType.GocqHeartBeat
     elif json_data['post_type'] == 'message':
         if json_data['message_type'] == 'group':
-            if json_data['group_id'] in APPLY_GROUP_ID:
+            if json_data['user_id'] == BOT_SELF_QQ:
+                return NoticeType.GroupMessageNoProcessRequired
+            elif json_data['group_id'] in APPLY_GROUP_ID:
                 return NoticeType.GroupMessage
             else:
                 return NoticeType.GroupMessageNoProcessRequired
         elif json_data['message_type'] == 'private':
-            return NoticeType.PrivateMessage
+            if json_data['user_id'] == BOT_SELF_QQ:
+                return NoticeType.PrivateMessageNoProcessRequired
+            else:
+                return NoticeType.PrivateMessage
         elif json_data['message_type'] == 'guild':
-            if (json_data['guild_id'], json_data['channel_id']) in APPLY_GUILD_ID:
+            if (json_data['guild_id'], json_data['channel_id']) in []:
                 return NoticeType.GuildMessage
             else:
                 return NoticeType.GuildMessageNoProcessRequired
@@ -208,8 +240,8 @@ def eventClassify(json_data: dict) -> NoticeType:
 def onMessageReceive(message: str) -> str:
     data: Dict[str, Any] = json.loads(message)
     # 筛选并处理指定事件
-    flag = eventClassify(data)
-
+    flag=eventClassify(data)
+    
     # 消息格式转换
     if BACKEND == BACKEND_TYPE.LAGRANGE and 'message' in data.keys():
         msgChain = MessageChain(data['message'])
@@ -218,8 +250,8 @@ def onMessageReceive(message: str) -> str:
         msg = msgOrigin.strip()
         data['message_chain'] = data['message']
         data['message'] = msgOrigin
-
-    if flag == NoticeType.GroupMessage:  # 群消息处理
+    
+    if flag==NoticeType.GroupMessage: # 群消息处理
         msg = data['message'].strip()
         for event in GroupPluginList:
             event: StandardPlugin
@@ -318,15 +350,16 @@ if __name__ == '__main__':
         def onMsgRecvGocq():
             msg = request.get_data(as_text=True)
             return onMessageReceive(msg)
-
-
-        app.run(host="127.0.0.1", port=5986)
+        if config == None:
+            app.run(host="127.0.0.1", port=5986)
+        else:
+            app.run(host=config['frontend-ip'], port=config['frontend-port'])
     elif BACKEND == BACKEND_TYPE.LAGRANGE:
         from websocket_server import WebsocketServer
-
-        server = WebsocketServer("127.0.0.1", port=5706)
-
-
+        if config == None:
+            server = WebsocketServer("127.0.0.1", port=5706)
+        else:
+            server = WebsocketServer(config['frontend-ip'], port=config['frontend-port'])
         def onMsgRecvLag(_0, _1, msg):
             onMessageReceive(msg)
 
