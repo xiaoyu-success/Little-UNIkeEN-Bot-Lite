@@ -9,6 +9,7 @@ from threading import Semaphore
 import time
 import os
 
+
 def createAdvertisementSql():
     mydb, mycursor = newSqlSession()
     mycursor.execute("""
@@ -20,27 +21,30 @@ def createAdvertisementSql():
         primary key(`group_id`, `unique_key`)
     )charset=utf8mb4, collate=utf8mb4_unicode_ci;""")
 
-def getLatestSeqAndTime(group_id: int)->Optional[Tuple[int, int]]:
+
+def getLatestSeqAndTime(group_id: int) -> Optional[Tuple[int, int]]:
     currentTime = int(time.time())
     msgs = get_group_msg_history(group_id)
     if len(msgs) > 0:
-        latestMsg = max(msgs, key=lambda x:x['message_seq'])
+        latestMsg = max(msgs, key=lambda x: x['message_seq'])
         return latestMsg['message_seq'], max(latestMsg['time'], currentTime)
     else:
         mydb, mycursor = newSqlSession()
         mycursor.execute("""
         select `message_seq`, unix_timestamp(`time`) from `messageRecord`
         where group_id = %d order by `message_seq` desc limit 1;
-        """%(group_id, ))
+        """ % (group_id,))
         result = list(mycursor)
         if len(result) == 0:
             return None
         else:
             return result[0][0], max(result[0][1], currentTime)
 
+
 class BaseAdvertisementClass(CronStandardPlugin):
     initGuard = Semaphore()
-    def __init__(self, adword:str, group_id:int, uniqueKey:str, deltaTime:int, deltaMsg:int):
+
+    def __init__(self, adword: str, group_id: int, uniqueKey: str, deltaTime: int, deltaMsg: int):
         """
         @group_id: 投放广告的目标群组
         @uniqueKey: 广告唯一标识（不同群可重合）
@@ -63,7 +67,7 @@ class BaseAdvertisementClass(CronStandardPlugin):
             lastMsgSeq, lastTime = getLatestSeqAndTime(self.group_id)
             self.dumpContext(lastMsgSeq, lastTime)
 
-        self.job = self.start(0, 20) # check every 20s
+        self.job = self.start(0, 20)  # check every 20s
 
     def tick(self):
         latestSeq, latestTime = getLatestSeqAndTime(self.group_id)
@@ -72,14 +76,14 @@ class BaseAdvertisementClass(CronStandardPlugin):
             send(self.group_id, self.adword)
             self.dumpContext(latestSeq, latestTime)
 
-    def loadContext(self)->Tuple[Optional[int], Optional[int]]:
+    def loadContext(self) -> Tuple[Optional[int], Optional[int]]:
         """
         @return: Tuple[last_message_seq, last_time]
         """
         mydb, mycursor = newSqlSession()
         mycursor.execute("""
         select `last_message_seq`, unix_timestamp(`last_time`) from `advertisementContext`
-        where group_id = %d and unique_key = '%s'"""%(
+        where group_id = %d and unique_key = '%s'""" % (
             self.group_id, escape_string(self.uniqueKey)
         ))
         result = list(mycursor)
@@ -88,30 +92,34 @@ class BaseAdvertisementClass(CronStandardPlugin):
         else:
             return result[0]
 
-    def dumpContext(self, lastMsgSeq:int, lastTime:int):
+    def dumpContext(self, lastMsgSeq: int, lastTime: int):
         mydb, mycursor = newSqlSession()
         mycursor.execute("""replace into `advertisementContext`
         (`last_message_seq`,`last_time`,`group_id`, `unique_key`) 
         values (%d, from_unixtime(%d), %d, '%s')
-        """%(
+        """ % (
             lastMsgSeq, lastTime,
             self.group_id, escape_string(self.uniqueKey)
         ))
         self.lastMsgSeq = lastMsgSeq
         self.lastTime = lastTime
 
-    def judgeSatisfy(self, latestSeq:int, latestTime:int):
-        return (latestTime - self.lastTime >= self.deltaTime and 
+    def judgeSatisfy(self, latestSeq: int, latestTime: int):
+        return (latestTime - self.lastTime >= self.deltaTime and
                 latestSeq - self.lastMsgSeq >= self.deltaMsg)
-    
+
     def cancel(self):
         if self.job != None:
             self.job.remove()
             self.job = None
+
     def isValid(self):
         return self.job != None
+
     def __del__(self):
         self.cancel()
+
+
 class McAdManager(StandardPlugin):
     def __init__(self):
         self.groups = {}
@@ -128,15 +136,18 @@ class McAdManager(StandardPlugin):
         self.uniqueKey = 'sjmcad'
         # self.deltaTime = 0 # 40 min
         # self.deltaMsg = 0  # 100 msg 
-        self.deltaTime = 60 * 60 # 60 min
-        self.deltaMsg = 150      #150 msg 
+        self.deltaTime = 60 * 60  # 60 min
+        self.deltaMsg = 150  # 150 msg
         for group_id in getPluginEnabledGroups('mcad'):
-            self.groups[group_id] = BaseAdvertisementClass(self.adword, group_id, self.uniqueKey, self.deltaTime, self.deltaMsg)
+            self.groups[group_id] = BaseAdvertisementClass(self.adword, group_id, self.uniqueKey, self.deltaTime,
+                                                           self.deltaMsg)
 
     def judgeTrigger(self, msg: str, data: Any) -> bool:
         return False
+
     def executeEvent(self, msg: str, data: Any) -> Union[None, str]:
         return None
+
     def getPluginInfo(self) -> dict:
         return {
             'name': 'McAdManager',
@@ -152,7 +163,8 @@ class McAdManager(StandardPlugin):
     def onStateChange(self, nextState: bool, data: Any) -> None:
         group_id = data['group_id']
         if nextState:
-            self.groups[group_id] = BaseAdvertisementClass(self.adword, group_id, self.uniqueKey, self.deltaTime, self.deltaMsg)
+            self.groups[group_id] = BaseAdvertisementClass(self.adword, group_id, self.uniqueKey, self.deltaTime,
+                                                           self.deltaMsg)
         else:
             if group_id in self.groups.keys():
                 self.groups[group_id].cancel()

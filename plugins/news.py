@@ -11,20 +11,24 @@ from threading import Semaphore
 from utils.configAPI import getPluginEnabledGroups
 from dateutil import parser as timeparser
 import numpy as np
+
+
 # TODO: same with yesterday
 
 class ShowNews(StandardPlugin):
-    def judgeTrigger(self, msg:str, data:Any) -> bool:
-        return (msg in ['每日新闻','新闻'])
-    def executeEvent(self, msg:str, data:Any) -> Union[None, str]:
-        target = data['group_id'] if data['message_type']=='group' else data['user_id']
+    def judgeTrigger(self, msg: str, data: Any) -> bool:
+        return (msg in ['每日新闻', '新闻'])
+
+    def executeEvent(self, msg: str, data: Any) -> Union[None, str]:
+        target = data['group_id'] if data['message_type'] == 'group' else data['user_id']
         today_exist, today_pic_str = get_news_pic_path(datetime.date.today())
         if today_exist:
             send(target, f'[CQ:image,file=file:///{today_pic_str}]', data['message_type'])
         else:
             send(target, "获取失败\n新闻源尚未更新本日新闻", data['message_type'])
         return "OK"
-    def getPluginInfo(self, )->Any:
+
+    def getPluginInfo(self, ) -> Any:
         return {
             'name': 'ShowNews',
             'description': '新闻',
@@ -36,17 +40,20 @@ class ShowNews(StandardPlugin):
             'author': '北极づ莜蓝',
         }
 
+
 class YesterdayNews(StandardPlugin):
     def judgeTrigger(self, msg: str, data: Any) -> bool:
         return msg in ['昨日新闻']
+
     def executeEvent(self, msg: str, data: Any) -> Union[None, str]:
-        target = data['group_id'] if data['message_type']=='group' else data['user_id']
+        target = data['group_id'] if data['message_type'] == 'group' else data['user_id']
         today_exist, today_pic_str = get_news_pic_path(datetime.date.today() + datetime.timedelta(days=-1))
         if today_exist:
             send(target, f'[CQ:image,file=file:///{today_pic_str}]', data['message_type'])
         else:
             send(target, "bot开小差了，昨日新闻没保存QAQ", data['message_type'])
         return "OK"
+
     def getPluginInfo(self) -> dict:
         return {
             'name': 'YesterdayNews',
@@ -59,16 +66,21 @@ class YesterdayNews(StandardPlugin):
             'author': '北极づ莜蓝',
         }
 
+
 class UpdateNewsAndReport(StandardPlugin, CronStandardPlugin):
     guard = Semaphore()
+
     def __init__(self) -> None:
         self.job = None
         if UpdateNewsAndReport.guard.acquire(blocking=False):
             self.job = self.start(0, 3 * 60)
+
     def judgeTrigger(self, msg: str, data: Any) -> bool:
         return False
+
     def executeEvent(self, msg: str, data: Any) -> Union[None, str]:
         return None
+
     def tick(self) -> None:
         exist, today_pic_str = get_news_pic_path(datetime.date.today())
         if exist: return
@@ -82,7 +94,7 @@ class UpdateNewsAndReport(StandardPlugin, CronStandardPlugin):
             today_pic.save(today_pic_str)
             for group_id in getPluginEnabledGroups('newsreport'):
                 send(group_id, f'[CQ:image,file=file:///{today_pic_str}]')
-                
+
     def getPluginInfo(self) -> dict:
         return {
             'name': 'UpdateNewsAndReport',
@@ -95,7 +107,8 @@ class UpdateNewsAndReport(StandardPlugin, CronStandardPlugin):
             'author': '北极づ莜蓝',
         }
 
-def get_news_pic_path(date: datetime.date)->Tuple[bool, str]:
+
+def get_news_pic_path(date: datetime.date) -> Tuple[bool, str]:
     """获取对应日期的新闻图片路径，并判断路径是否存在
     @date: 新闻日期
 
@@ -109,7 +122,8 @@ def get_news_pic_path(date: datetime.date)->Tuple[bool, str]:
     exist = os.path.isfile(pic_path)
     return exist, pic_path
 
-def get_todays_news()->Optional[Image.Image]:
+
+def get_todays_news() -> Optional[Image.Image]:
     url = 'https://api.jun.la/60s.php?format=imgapi'
     try:
         req = requests.get(url).json()
@@ -128,15 +142,16 @@ def get_todays_news()->Optional[Image.Image]:
     except:
         return None
 
-def checkSameWithYesterday(img:Image.Image)->bool:
+
+def checkSameWithYesterday(img: Image.Image) -> bool:
     yesterday = datetime.date.today() + datetime.timedelta(days=-1)
     yesterdayExist, yesterdayImgPath = get_news_pic_path(yesterday)
     if not yesterdayExist:
         return False
     try:
         yesterdayImg = Image.open(yesterdayImgPath)
-        img:np.ndarray = np.asarray(img)
-        yesterdayImg:np.ndarray = np.asarray(yesterdayImg)
+        img: np.ndarray = np.asarray(img)
+        yesterdayImg: np.ndarray = np.asarray(yesterdayImg)
         if img.shape != yesterdayImg.shape:
             return False
         return np.all(img == yesterdayImg)

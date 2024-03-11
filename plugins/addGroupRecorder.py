@@ -6,8 +6,10 @@ import mysql.connector
 from threading import Semaphore
 import datetime
 
+
 class AddGroupRecorder(AddGroupStandardPlugin, CronStandardPlugin):
     initOnceGuard = Semaphore()
+
     def __init__(self) -> None:
         if self.initOnceGuard.acquire(blocking=False):
             mydb, mycursor = newSqlSession()
@@ -24,9 +26,11 @@ class AddGroupRecorder(AddGroupStandardPlugin, CronStandardPlugin):
                 primary key (`request_id`, `group_id`, `user_id`),
                 index(`user_id`)
             )charset=utf8mb4, collate=utf8mb4_unicode_ci;""")
-            self.start(0, 3*60)
+            self.start(0, 3 * 60)
+
     def judgeTrigger(self, data) -> bool:
         return True
+
     def addGroupVerication(self, data) -> Union[str, None]:
         try:
             mydb, mycursor = newSqlSession()
@@ -55,8 +59,8 @@ class AddGroupRecorder(AddGroupStandardPlugin, CronStandardPlugin):
         except BaseException as e:
             warning("exception in AddGroupRecorder: {}".format(e))
         return None
-    
-    def tick(self,):
+
+    def tick(self, ):
         try:
             group_system = get_group_system_msg()
         except:
@@ -70,7 +74,7 @@ class AddGroupRecorder(AddGroupStandardPlugin, CronStandardPlugin):
                 update `addGroupRecord` set
                 `invitor_id` = %s,
                 `invitor_nick` = %s where 
-                `request_id` = %s""",(
+                `request_id` = %s""", (
                     invq['invitor_uin'],
                     invq['invitor_nick'],
                     invq['request_id']

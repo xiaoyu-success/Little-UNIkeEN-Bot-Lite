@@ -73,14 +73,17 @@ GOODNIGHT_LIST = [
     "晚安，我带着我的可爱一起打烊了，帮我关一下月亮",
 ]
 
+
 class MorningGreet(StandardPlugin):
-    def judgeTrigger(self, msg:str, data:Any) -> bool:
+    def judgeTrigger(self, msg: str, data: Any) -> bool:
         return msg.startswith('早安')
-    def executeEvent(self, msg:str, data:Any) -> Union[None, str]:
-        target = data['group_id'] if data['message_type']=='group' else data['user_id']
+
+    def executeEvent(self, msg: str, data: Any) -> Union[None, str]:
+        target = data['group_id'] if data['message_type'] == 'group' else data['user_id']
         send(target, random.choice(GOODMORNING_LIST), data['message_type'])
         return "OK"
-    def getPluginInfo(self, )->Any:
+
+    def getPluginInfo(self, ) -> Any:
         return {
             'name': 'MorningGreet',
             'description': '早安',
@@ -91,14 +94,18 @@ class MorningGreet(StandardPlugin):
             'version': '1.0.0',
             'author': 'Unicorn',
         }
+
+
 class NightGreet(StandardPlugin):
-    def judgeTrigger(self, msg:str, data:Any) -> bool:
+    def judgeTrigger(self, msg: str, data: Any) -> bool:
         return msg.startswith('晚安')
-    def executeEvent(self, msg:str, data:Any) -> Union[None, str]:
-        target = data['group_id'] if data['message_type']=='group' else data['user_id']
+
+    def executeEvent(self, msg: str, data: Any) -> Union[None, str]:
+        target = data['group_id'] if data['message_type'] == 'group' else data['user_id']
         send(target, random.choice(GOODNIGHT_LIST), data['message_type'])
         return "OK"
-    def getPluginInfo(self, )->Any:
+
+    def getPluginInfo(self, ) -> Any:
         return {
             'name': 'NightGreet',
             'description': '晚安',

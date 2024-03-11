@@ -1,10 +1,12 @@
 import requests
 from utils.standardPlugin import GroupUploadStandardPlugin, Union, Tuple, Any, List
 from utils.basicEvent import get_group_list, warning
-from utils.basicEvent import get_group_file_system_info, get_group_files_by_folder, get_group_root_files, get_group_file_url
+from utils.basicEvent import get_group_file_system_info, get_group_files_by_folder, get_group_root_files, \
+    get_group_file_url
 from utils.basicConfigs import sqlConfig
 from utils.sqlUtils import newSqlSession
 import mysql.connector
+
 """
 # 筛选file_id:
 select group_id, file_id, file_name, busid, file_size, (file_bin is not null) from BOT_DATA_%d.fileRecord where ...;
@@ -17,6 +19,7 @@ bash>       sudo mv /var/lib/mysql-files/tmp.pdf /tmp/tmp.pdf
 bash>       sudo chmod 777 /tmp/tmp.pdf
 powershell> scp ubuntu@xxx.xxx:/tmp/tmp.pdf ~/Desktop/
 """
+
 
 def createSqlFileTable():
     """建表"""
@@ -35,10 +38,13 @@ def createSqlFileTable():
         primary key (`group_id`, `file_id`, `busid`)
     )charset=utf8mb4, collate=utf8mb4_unicode_ci;
     """)
+
+
 class GroupFileRecorder(GroupUploadStandardPlugin):
     def __init__(self) -> None:
         createSqlFileTable()
-    def uploadFile(self, data)->Union[str, None]:
+
+    def uploadFile(self, data) -> Union[str, None]:
         file = data['file']
         mydb, mycursor = newSqlSession()
         mycursor = mydb.cursor()
@@ -60,13 +66,13 @@ class GroupFileRecorder(GroupUploadStandardPlugin):
                 data['user_id'],
                 file['url'],
             ))
-            if file['size'] < 1024* 1024* 100: # 100MB
+            if file['size'] < 1024 * 1024 * 100:  # 100MB
                 req = requests.get(file['url'])
                 if req.status_code != requests.codes.ok:
                     warning("tencent file API failed in file recorder")
                     return "OK"
                 mycursor.execute("""update `fileRecord` set `file_bin`= %s
-                    where group_id = %s and file_id = %s and busid = %s""",(
+                    where group_id = %s and file_id = %s and busid = %s""", (
                     req.content, data['group_id'], file['id'], file['busid']
                 ))
         except KeyError as e:

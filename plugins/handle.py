@@ -11,7 +11,10 @@ from PIL import ImageFont, Image, ImageDraw
 from dataclasses import dataclass
 from pypinyin import Style, pinyin
 import random
+
 HANDLE_RESOURCE_PATH = 'resources/handle'
+
+
 class GuessResult(Enum):
     WIN = 0  # 猜出正确成语
     LOSS = 1  # 达到最大可猜次数，未猜出正确成语
@@ -43,12 +46,15 @@ ENHANCED_COLOR = ColorGroup(
     "#ffffff", "#f7f8f9", "#5ba554", "#ff46ff", "#b4b8be", "#5d6673"
 )
 # 声母
-INITIALS = ["zh", "z", "y", "x", "w", "t", "sh", "s", "r", "q", "p", "n", "m", "l", "k", "j", "h", "g", "f", "d", "ch", "c", "b"]
+INITIALS = ["zh", "z", "y", "x", "w", "t", "sh", "s", "r", "q", "p", "n", "m", "l", "k", "j", "h", "g", "f", "d", "ch",
+            "c", "b"]
 # 韵母
 FINALS = [
     "ün", "üe", "üan", "ü", "uo", "un", "ui", "ue", "uang", "uan", "uai", "ua", "ou", "iu", "iong", "ong", "io", "ing",
     "in", "ie", "iao", "iang", "ian", "ia", "er", "eng", "en", "ei", "ao", "ang", "an", "ai", "u", "o", "i", "e", "a"
 ]
+
+
 # fmt: on
 
 
@@ -75,12 +81,13 @@ def get_pinyin(idiom: str) -> List[Tuple[str, str, str]]:
         results.append((initial, final, tone))  # 声母，韵母，声调
     return results
 
+
 class HandleGame:
     IDIOMS = []
     with open(os.path.join(ROOT_PATH, HANDLE_RESOURCE_PATH, 'idioms.txt'), 'r', encoding='utf-8') as f:
         for idiom in f.readlines():
             IDIOMS.append(idiom.strip())
-    
+
     def __init__(self, idiom: str, explanation: str, strict: bool = False):
         self.idiom: str = idiom  # 成语
         self.explanation: str = explanation  # 释义
@@ -98,9 +105,12 @@ class HandleGame:
         font_size_char = 60  # 汉字字体大小
         font_size_pinyin = 30  # 拼音字体大小
         font_size_tone = 22  # 声调字体大小
-        self.font_char = ImageFont.truetype(os.path.join(ROOT_PATH, FONTS_PATH, "NotoSerifSC-Regular.otf"), font_size_char, encoding='utf-8')
-        self.font_pinyin = ImageFont.truetype(os.path.join(ROOT_PATH, FONTS_PATH, "NotoSansMono-Regular.ttf"), font_size_pinyin, encoding='utf-8')
-        self.font_tone = ImageFont.truetype(os.path.join(ROOT_PATH, FONTS_PATH, "NotoSansMono-Regular.ttf"), font_size_tone, encoding='utf-8')
+        self.font_char = ImageFont.truetype(os.path.join(ROOT_PATH, FONTS_PATH, "NotoSerifSC-Regular.otf"),
+                                            font_size_char, encoding='utf-8')
+        self.font_pinyin = ImageFont.truetype(os.path.join(ROOT_PATH, FONTS_PATH, "NotoSansMono-Regular.ttf"),
+                                              font_size_pinyin, encoding='utf-8')
+        self.font_tone = ImageFont.truetype(os.path.join(ROOT_PATH, FONTS_PATH, "NotoSansMono-Regular.ttf"),
+                                            font_size_tone, encoding='utf-8')
 
         self.colors = ENHANCED_COLOR if False else NORMAL_COLOR
 
@@ -117,18 +127,18 @@ class HandleGame:
             return GuessResult.LOSS
 
     def draw_block(
-        self,
-        block_color: str,
-        char: str = "",
-        char_color: str = "",
-        initial: str = "",
-        initial_color: str = "",
-        final: str = "",
-        final_color: str = "",
-        tone: str = "",
-        tone_color: str = "",
-        underline: bool = False,
-        underline_color: str = "",
+            self,
+            block_color: str,
+            char: str = "",
+            char_color: str = "",
+            initial: str = "",
+            initial_color: str = "",
+            final: str = "",
+            final_color: str = "",
+            tone: str = "",
+            tone_color: str = "",
+            underline: bool = False,
+            underline_color: str = "",
     ) -> Image.Image:
         block = Image.new("RGB", self.block_size, block_color)
         if not char:
@@ -169,7 +179,7 @@ class HandleGame:
 
         return block
 
-    def draw(self, savePath:str) -> None:
+    def draw(self, savePath: str) -> None:
         rows = min(len(self.guessed_idiom) + 1, self.times)
         board_w = self.length * self.block_size[0]
         board_w += (self.length - 1) * self.block_padding[0] + 2 * self.padding[0]
@@ -275,7 +285,7 @@ class HandleGame:
             board.paste(block, block_pos(i, j))
         board.save(savePath)
 
-    def draw_hint(self, savePath:str):
+    def draw_hint(self, savePath: str):
         guessed_char = set("".join(self.guessed_idiom))
         guessed_initial = set()
         guessed_final = set()
@@ -318,7 +328,8 @@ class HandleGame:
             board.paste(block, (x, y))
         board.save(savePath)
 
-def drawHelpPic(savePath:str):
+
+def drawHelpPic(savePath: str):
     helpWords = (
         "输入“猜成语”或者“-handle”开始游戏：\n"
         "你有十次的机会猜一个四字词语；\n"
@@ -335,10 +346,10 @@ def drawHelpPic(savePath:str):
         "游戏失败不退coins。"
     )
     helpCards = ResponseImage(
-        title = '猜成语帮助', 
-        titleColor = PALETTE_CYAN,
-        width = 1000,
-        cardBodyFont= ImageFont.truetype(os.path.join(FONTS_PATH, 'SourceHanSansCN-Medium.otf'), 24),
+        title='猜成语帮助',
+        titleColor=PALETTE_CYAN,
+        width=1000,
+        cardBodyFont=ImageFont.truetype(os.path.join(FONTS_PATH, 'SourceHanSansCN-Medium.otf'), 24),
     )
     cardList = []
     cardList.append(('body', helpWords))
@@ -348,84 +359,90 @@ def drawHelpPic(savePath:str):
     ))
     helpCards.generateImage(savePath)
 
+
 class HandleHelper(StandardPlugin):
     def judgeTrigger(self, msg: str, data: Any) -> bool:
         return msg in ['猜成语帮助', '成语帮助']
+
     def executeEvent(self, msg: str, data: Any) -> Union[str, None]:
         groupId = data['group_id']
         savePath = os.path.join(ROOT_PATH, SAVE_TMP_PATH, 'handlehelp.png')
         drawHelpPic(savePath)
         send(groupId, f'[CQ:image,file=file:///{savePath}]', 'group')
         return 'OK'
+
     def getPluginInfo(self) -> dict:
         return {
             'name': 'HandleHelper',
             'description': '猜成语帮助',
             'commandDescription': '猜成语帮助',
-            'usePlace': ['group',],
+            'usePlace': ['group', ],
             'showInHelp': True,
             'pluginConfigTableNames': [],
             'version': '1.0.0',
             'author': 'Unicorn',
         }
-        
+
+
 class Handle(StandardPlugin):
     def __init__(self) -> None:
-        self.answers:Optional[List[Dict[str, str]]] = None
+        self.answers: Optional[List[Dict[str, str]]] = None
         self.wordPattern = re.compile(r'^[\u4e00-\u9fa5]{4}$')
         self.startWords = ['猜成语', '-handle']
         self.hintWords = ['成语提示', '猜成语提示', '提示']
         self.stopWords = ['结束']
-        self.games:Dict[int,Optional[HandleGame]] = {}
-        self.deposit:Dict[int, Optional[int]] = {}
-        self.initiator:Dict[int, int] = {}
+        self.games: Dict[int, Optional[HandleGame]] = {}
+        self.deposit: Dict[int, Optional[int]] = {}
+        self.initiator: Dict[int, int] = {}
         self.load_words()
-        
+
     def load_words(self):
         with open(os.path.join(ROOT_PATH, HANDLE_RESOURCE_PATH, 'answers.json'), 'r', encoding='utf-8') as f:
             self.answers = json.load(f)
-    def random_word(self)->Tuple[str, str]:
+
+    def random_word(self) -> Tuple[str, str]:
         result = random.choice(self.answers)
         return result['word'], result['explanation']
+
     def judgeTrigger(self, msg: str, data: Any) -> bool:
         return (
-            (msg in self.startWords) or 
-            (msg in self.hintWords) or
-            (msg in self.stopWords) or
-            (self.wordPattern.match(msg) != None) 
+                (msg in self.startWords) or
+                (msg in self.hintWords) or
+                (msg in self.stopWords) or
+                (self.wordPattern.match(msg) != None)
         )
-        
+
     def executeEvent(self, msg: str, data: Any) -> Union[str, None]:
         groupId = data['group_id']
         userId = data['user_id']
-        savePath = os.path.join(ROOT_PATH, SAVE_TMP_PATH, 'handle-%d.png'%groupId)
+        savePath = os.path.join(ROOT_PATH, SAVE_TMP_PATH, 'handle-%d.png' % groupId)
         if msg in self.startWords:
             game = self.games.get(groupId)
             if game != None:
-                game:HandleGame
+                game: HandleGame
                 game.draw(savePath)
-                send(groupId, '当前有正在进行的猜成语游戏\n[CQ:image,file=file:///%s]'%savePath)
-            elif get_user_coins(userId,format=False) < 30 * 100:
+                send(groupId, '当前有正在进行的猜成语游戏\n[CQ:image,file=file:///%s]' % savePath)
+            elif get_user_coins(userId, format=False) < 30 * 100:
                 send(groupId, 'coins不足30，无法发起游戏')
             else:
-                update_user_coins(userId, -30*100, '猜成语押金', format=False)
-                self.deposit[groupId] = 25*100
+                update_user_coins(userId, -30 * 100, '猜成语押金', format=False)
+                self.deposit[groupId] = 25 * 100
                 self.initiator[groupId] = userId
                 word, explain = self.random_word()
                 game = self.games[groupId] = HandleGame(word, explain, strict=True)
                 game.draw(savePath)
-                send(groupId, '你有%d次机会猜一个四字成语，请发送成语[CQ:image,file=file:///%s]'%(
-                        game.times, savePath))
+                send(groupId, '你有%d次机会猜一个四字成语，请发送成语[CQ:image,file=file:///%s]' % (
+                    game.times, savePath))
         elif msg in self.hintWords:
             game = self.games.get(groupId)
             if game == None: return None
-            if get_user_coins(userId, format=False) < 5*100:
+            if get_user_coins(userId, format=False) < 5 * 100:
                 send(groupId, 'coins不足，无法提示')
             else:
                 game.draw_hint(savePath)
-                send(groupId, '[CQ:image,file=file:///%s]'%savePath)
-                self.deposit[groupId] -= 5*100
-                update_user_coins(userId, -5*100, '猜成语提示', format=False)
+                send(groupId, '[CQ:image,file=file:///%s]' % savePath)
+                self.deposit[groupId] -= 5 * 100
+                update_user_coins(userId, -5 * 100, '猜成语提示', format=False)
         elif msg in self.stopWords:
             game = self.games.pop(groupId, None)
             if game == None: return None
@@ -440,10 +457,10 @@ class Handle(StandardPlugin):
             result = game.guess(word)
             if result == GuessResult.WIN:
                 game.draw(savePath)
-                send(groupId, '恭喜你猜出了成语！\n%s[CQ:image,file=file:///%s]'%(
+                send(groupId, '恭喜你猜出了成语！\n%s[CQ:image,file=file:///%s]' % (
                     game.result, savePath
                 ))
-                update_user_coins(userId, 15*100, '猜成语获胜', format=False)
+                update_user_coins(userId, 15 * 100, '猜成语获胜', format=False)
                 initiator = self.initiator.get(groupId, None)
                 deposit = self.deposit.get(groupId, 0)
                 if deposit > 0 and initiator != None:
@@ -453,26 +470,26 @@ class Handle(StandardPlugin):
                 self.games.pop(groupId, None)
             elif result == GuessResult.LOSS:
                 game.draw(savePath)
-                send(groupId, '很遗憾，没有人猜出来呢~\n%s[CQ:image,file=file:///%s]'%(
+                send(groupId, '很遗憾，没有人猜出来呢~\n%s[CQ:image,file=file:///%s]' % (
                     game.result, savePath
                 ))
                 self.games.pop(groupId)
             elif result == GuessResult.DUPLICATE:
-                send(groupId, '[CQ:reply,id=%d]不对哦，这个成语已经被猜过了~'%data['message_id'])
+                send(groupId, '[CQ:reply,id=%d]不对哦，这个成语已经被猜过了~' % data['message_id'])
             elif result == GuessResult.ILLEGAL:
-                send(groupId, '[CQ:reply,id=%d]你确定“%s”是一个正确的成语吗？'%(data['message_id'], word))
+                send(groupId, '[CQ:reply,id=%d]你确定“%s”是一个正确的成语吗？' % (data['message_id'], word))
             else:
                 game.draw(savePath)
-                send(groupId, '[CQ:image,file=file:///%s]'%(savePath))
-            
+                send(groupId, '[CQ:image,file=file:///%s]' % (savePath))
+
         return 'OK'
-    
+
     def getPluginInfo(self) -> dict:
         return {
             'name': 'Handle',
             'description': '猜成语',
             'commandDescription': '猜成语 / -handle',
-            'usePlace': ['group',],
+            'usePlace': ['group', ],
             'showInHelp': True,
             'pluginConfigTableNames': [],
             'version': '1.0.0',

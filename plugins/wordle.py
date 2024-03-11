@@ -12,10 +12,12 @@ from spellchecker import SpellChecker
 from PIL import ImageFont, Image, ImageDraw
 from dataclasses import dataclass
 import random
+
 WORDLE_RESOURCE_PATH = 'resources/wordle'
 DIFFICULTY_LIST = []
 
-def drawHelpPic(savePath:str):
+
+def drawHelpPic(savePath: str):
     helpWords = (
         "输入“猜单词”或者“-wordle”开始游戏：\n"
         "答案为指定长度单词，发送对应长度单词即可；\n"
@@ -33,10 +35,10 @@ def drawHelpPic(savePath:str):
         "游戏失败不退coins。"
     )
     helpCards = ResponseImage(
-        title = '猜单词帮助', 
-        titleColor = PALETTE_CYAN,
-        width = 1000,
-        cardBodyFont= ImageFont.truetype(os.path.join(FONTS_PATH, 'SourceHanSansCN-Medium.otf'), 24),
+        title='猜单词帮助',
+        titleColor=PALETTE_CYAN,
+        width=1000,
+        cardBodyFont=ImageFont.truetype(os.path.join(FONTS_PATH, 'SourceHanSansCN-Medium.otf'), 24),
     )
     cardList = []
     cardList.append(('body', helpWords))
@@ -46,6 +48,7 @@ def drawHelpPic(savePath:str):
     ))
     helpCards.generateImage(savePath)
 
+
 class Wordle(StandardPlugin):
     def __init__(self) -> None:
         self.wordPattern = re.compile(r'^[a-zA-Z]{3,8}$')
@@ -53,33 +56,33 @@ class Wordle(StandardPlugin):
         self.startWords = ['猜单词', '-wordle']
         self.hintWords = ['单词提示', '猜单词提示', '提示']
         self.stopWords = ['结束']
-        
-        self.games:Dict[int,Optional[WordleGame]] = {}
-        self.difficulties:Dict[int,str] = {}
+
+        self.games: Dict[int, Optional[WordleGame]] = {}
+        self.difficulties: Dict[int, str] = {}
         self.difficultyList = []
         # words[难度][单词长度] -> [单词, 解释]
-        self.words:Dict[str,Dict[int,Tuple[str,str]]] = {}
-        self.deposit:Dict[int, Optional[int]] = {}
-        self.initiator:Dict[int, int] = {}
+        self.words: Dict[str, Dict[int, Tuple[str, str]]] = {}
+        self.deposit: Dict[int, Optional[int]] = {}
+        self.initiator: Dict[int, int] = {}
         self.load_words()
         global DIFFICULTY_LIST
         DIFFICULTY_LIST = self.difficultyList
-        
+
     def load_words(self):
         wordleResourcePath = os.path.join(ROOT_PATH, WORDLE_RESOURCE_PATH)
         for wordleResourceName in os.listdir(wordleResourcePath):
             difficulty, suffix = os.path.splitext(wordleResourceName)
             if suffix != '.json': continue
             self.difficultyList.append(difficulty)
-            with open(os.path.join(wordleResourcePath, wordleResourceName),'r', encoding='utf-8') as f:
-                lenDict = {l:[] for l in range(3, 9)}
+            with open(os.path.join(wordleResourcePath, wordleResourceName), 'r', encoding='utf-8') as f:
+                lenDict = {l: [] for l in range(3, 9)}
                 for word, interpretation in json.load(f).items():
                     l = len(word)
                     if l < 3 or l >= 9: continue
                     lenDict[l].append((word, interpretation['中释']))
                 self.words[difficulty] = lenDict
 
-    def randomSelectWord(self, difficulty:str)->Optional[Tuple[str, str]]:
+    def randomSelectWord(self, difficulty: str) -> Optional[Tuple[str, str]]:
         # 长度  概率    CDF
         # 3     5%     5%
         # 4     15%    20%
@@ -87,59 +90,66 @@ class Wordle(StandardPlugin):
         # 6     20%    80%
         # 7     15%    95%
         # 8     5%     100%
-        def randomLen()->int:
+        def randomLen() -> int:
             r = random.randint(0, 99)
-            if r < 5: return 3
-            elif r < 20: return 4
-            elif r < 60: return 5
-            elif r < 80: return 6
-            elif r < 95: return 7
-            else: return 8
+            if r < 5:
+                return 3
+            elif r < 20:
+                return 4
+            elif r < 60:
+                return 5
+            elif r < 80:
+                return 6
+            elif r < 95:
+                return 7
+            else:
+                return 8
+
         l = randomLen()
-        wordList = self.words.get(difficulty,{}).get(l,[])
+        wordList = self.words.get(difficulty, {}).get(l, [])
         if len(wordList) == 0: return None
         return random.choice(wordList)
 
     def judgeTrigger(self, msg: str, data: Any) -> bool:
         return (
-            (msg in self.startWords) or 
-            (msg in self.hintWords) or
-            (msg in self.stopWords) or
-            (self.wordPattern.match(msg) != None) or 
-            (self.difficultyPattern.match(msg) != None) 
+                (msg in self.startWords) or
+                (msg in self.hintWords) or
+                (msg in self.stopWords) or
+                (self.wordPattern.match(msg) != None) or
+                (self.difficultyPattern.match(msg) != None)
         )
-        
+
     def executeEvent(self, msg: str, data: Any) -> Union[str, None]:
         groupId = data['group_id']
         userId = data['user_id']
-        savePath = os.path.join(ROOT_PATH, SAVE_TMP_PATH, 'wordle-%d.png'%groupId)
+        savePath = os.path.join(ROOT_PATH, SAVE_TMP_PATH, 'wordle-%d.png' % groupId)
         if msg in self.startWords:
             game = self.games.get(groupId)
             if game != None:
-                game:WordleGame
+                game: WordleGame
                 game.draw(savePath)
-                send(groupId, '当前有正在进行的猜单词游戏\n[CQ:image,file=file:///%s]'%savePath)
+                send(groupId, '当前有正在进行的猜单词游戏\n[CQ:image,file=file:///%s]' % savePath)
             else:
                 difficulty = self.difficulties.get(groupId, 'CET4')
                 wordResult = self.randomSelectWord(difficulty)
                 if wordResult == None:
-                    send(groupId, '[CQ:reply,id=%d]内部错误，请输入“猜单词难度 CET4”重置难度信息'%data['message_id'])
-                elif get_user_coins(userId, format=False) < 30*100:
+                    send(groupId, '[CQ:reply,id=%d]内部错误，请输入“猜单词难度 CET4”重置难度信息' % data['message_id'])
+                elif get_user_coins(userId, format=False) < 30 * 100:
                     send(groupId, 'coins不足30，无法发起游戏')
                 else:
-                    update_user_coins(userId, -30*100, '猜单词押金', format=False)
-                    self.deposit[groupId] = 25*100
+                    update_user_coins(userId, -30 * 100, '猜单词押金', format=False)
+                    self.deposit[groupId] = 25 * 100
                     self.initiator[groupId] = userId
                     game = self.games[groupId] = WordleGame(wordResult[0], wordResult[1])
                     game.draw(savePath)
-                    send(groupId, '你有%d次机会猜出单词，单词长度为%d，请发送单词[CQ:image,file=file:///%s]'%(
+                    send(groupId, '你有%d次机会猜出单词，单词长度为%d，请发送单词[CQ:image,file=file:///%s]' % (
                         game.rows, game.length, savePath))
         elif msg in self.hintWords:
             game = self.games.get(groupId)
             if game == None:
                 return None
                 # send(groupId, '[CQ:reply,id=%d]群内没有正在进行的猜单词游戏，请输入“猜单词”或“-wordle”开始游戏'%data['message_id'])
-            if get_user_coins(userId, format=False) < 5*100:
+            if get_user_coins(userId, format=False) < 5 * 100:
                 send(groupId, 'coins不足，无法提示')
             else:
                 hint = game.get_hint()
@@ -147,9 +157,9 @@ class Wordle(StandardPlugin):
                     send(groupId, "你还没有猜对过一个字母哦，再猜猜吧~")
                 else:
                     game.draw_hint(hint, savePath)
-                    send(groupId, '[CQ:image,file=file:///%s]'%savePath)
-                    self.deposit[groupId] -= 5*100
-                    update_user_coins(userId, -5*100, '猜单词提示', format=False)
+                    send(groupId, '[CQ:image,file=file:///%s]' % savePath)
+                    self.deposit[groupId] -= 5 * 100
+                    update_user_coins(userId, -5 * 100, '猜单词提示', format=False)
         elif msg in self.stopWords:
             game = self.games.pop(groupId, None)
             if game == None:
@@ -165,15 +175,16 @@ class Wordle(StandardPlugin):
             word = msg
             if game != None:
                 if len(word) != game.length:
-                    send(groupId, '[CQ:reply,id=%d]单词长度不正确，请发送长度为%d的单词'%(data['message_id'], game.length))
+                    send(groupId,
+                         '[CQ:reply,id=%d]单词长度不正确，请发送长度为%d的单词' % (data['message_id'], game.length))
                 else:
                     result = game.guess(word)
                     if result == GuessResult.WIN:
                         game.draw(savePath)
-                        send(groupId, '恭喜你猜出了单词！\n%s[CQ:image,file=file:///%s]'%(
+                        send(groupId, '恭喜你猜出了单词！\n%s[CQ:image,file=file:///%s]' % (
                             game.result, savePath
                         ))
-                        update_user_coins(userId, 15*100, '猜单词获胜', format=False)
+                        update_user_coins(userId, 15 * 100, '猜单词获胜', format=False)
                         initiator = self.initiator.get(groupId, None)
                         deposit = self.deposit.get(groupId, 0)
                         if deposit > 0 and initiator != None:
@@ -183,62 +194,68 @@ class Wordle(StandardPlugin):
                         self.games.pop(groupId, None)
                     elif result == GuessResult.LOSS:
                         game.draw(savePath)
-                        send(groupId, '很遗憾，没有人猜出来呢~\n%s[CQ:image,file=file:///%s]'%(
+                        send(groupId, '很遗憾，没有人猜出来呢~\n%s[CQ:image,file=file:///%s]' % (
                             game.result, savePath
                         ))
                         self.games.pop(groupId)
                     elif result == GuessResult.DUPLICATE:
-                        send(groupId, '[CQ:reply,id=%d]不对哦，这个单词已经被猜过了~'%data['message_id'])
+                        send(groupId, '[CQ:reply,id=%d]不对哦，这个单词已经被猜过了~' % data['message_id'])
                     elif result == GuessResult.ILLEGAL:
-                        send(groupId, '[CQ:reply,id=%d]你确定“%s”是一个合法的单词吗？'%(data['message_id'], word))
+                        send(groupId, '[CQ:reply,id=%d]你确定“%s”是一个合法的单词吗？' % (data['message_id'], word))
                     else:
                         game.draw(savePath)
-                        send(groupId, '[CQ:image,file=file:///%s]'%(savePath))
+                        send(groupId, '[CQ:image,file=file:///%s]' % (savePath))
             else:
                 return None
         elif self.difficultyPattern.match(msg) != None:
             difficulty = self.difficultyPattern.findall(msg)[0]
             if len(difficulty) == 0:
                 difficulty = self.difficulties.get(groupId, 'CET4')
-                send(groupId, '[CQ:reply,id=%d]当前难度为“%s”'%(data['message_id'], difficulty))
+                send(groupId, '[CQ:reply,id=%d]当前难度为“%s”' % (data['message_id'], difficulty))
             elif difficulty in self.difficultyList:
                 self.difficulties[groupId] = difficulty
-                send(groupId, '[CQ:reply,id=%d]设置成功，当前难度为%s'%(data['message_id'], difficulty))
+                send(groupId, '[CQ:reply,id=%d]设置成功，当前难度为%s' % (data['message_id'], difficulty))
             else:
-                send(groupId,'[CQ:reply,id=%d]设置失败，可用的难度有：\n%s'%(data['message_id'], '、'.join(self.difficultyList)))
+                send(groupId,
+                     '[CQ:reply,id=%d]设置失败，可用的难度有：\n%s' % (data['message_id'], '、'.join(self.difficultyList)))
         return 'OK'
-    
+
     def getPluginInfo(self) -> dict:
         return {
             'name': 'Wordle',
             'description': '猜单词',
             'commandDescription': '猜单词 / -wordle',
-            'usePlace': ['group',],
+            'usePlace': ['group', ],
             'showInHelp': True,
             'pluginConfigTableNames': [],
             'version': '1.0.0',
             'author': 'Unicorn',
         }
+
+
 class WordleHelper(StandardPlugin):
     def judgeTrigger(self, msg: str, data: Any) -> bool:
         return msg in ['猜单词帮助', '单词帮助']
+
     def executeEvent(self, msg: str, data: Any) -> Union[str, None]:
         groupId = data['group_id']
         savePath = os.path.join(ROOT_PATH, SAVE_TMP_PATH, 'wordlehelp.png')
         drawHelpPic(savePath)
         send(groupId, f'[CQ:image,file=file:///{savePath}]', 'group')
         return 'OK'
+
     def getPluginInfo(self) -> dict:
         return {
             'name': 'WordleHelper',
             'description': '猜单词帮助',
             'commandDescription': '猜单词帮助',
-            'usePlace': ['group',],
+            'usePlace': ['group', ],
             'showInHelp': True,
             'pluginConfigTableNames': [],
             'version': '1.0.0',
             'author': 'Unicorn',
         }
+
 
 class GuessResult(Enum):
     WIN = 0  # 猜出正确单词
@@ -262,7 +279,8 @@ class WordleGame:
         self.padding = (20, 20)  # 边界间距
         self.border_width = 2  # 边框宽度
         self.font_size = 20  # 字体大小
-        self.font = ImageFont.truetype(os.path.join(ROOT_PATH, FONTS_PATH, "KarnakPro-Bold.ttf"), self.font_size, encoding="utf-8")
+        self.font = ImageFont.truetype(os.path.join(ROOT_PATH, FONTS_PATH, "KarnakPro-Bold.ttf"), self.font_size,
+                                       encoding="utf-8")
 
         self.correct_color = (134, 163, 115)  # 存在且位置正确时的颜色
         self.exist_color = (198, 182, 109)  # 存在但位置不正确时的颜色
@@ -272,10 +290,10 @@ class WordleGame:
         self.font_color = (255, 255, 255)  # 文字颜色
 
         self.spellChecker = SpellChecker()
-        
-    def legal_word(self, word:str) -> bool:
+
+    def legal_word(self, word: str) -> bool:
         return not self.spellChecker.unknown((word,))
-    
+
     def guess(self, word: str) -> Optional[GuessResult]:
         word = word.lower()
         if word == self.word_lower:
@@ -304,7 +322,7 @@ class WordleGame:
             draw.text((x, y), letter, font=self.font, fill=self.font_color)
         return block
 
-    def draw(self, savePath:str):
+    def draw(self, savePath: str):
         board_w = self.length * self.block_size[0]
         board_w += (self.length - 1) * self.block_padding[0] + 2 * self.padding[0]
         board_h = self.rows * self.block_size[1]
@@ -360,7 +378,7 @@ class WordleGame:
                     letters.add(letter)
         return "".join([i if i in letters else "*" for i in self.word_lower])
 
-    def draw_hint(self, hint: str, savePath:str):
+    def draw_hint(self, hint: str, savePath: str):
         board_w = self.length * self.block_size[0]
         board_w += (self.length - 1) * self.block_padding[0] + 2 * self.padding[0]
         board_h = self.block_size[1] + 2 * self.padding[1]

@@ -15,7 +15,7 @@ class FireworksFace(StandardPlugin):
         return "OK"
 
     def getPluginInfo(
-        self,
+            self,
     ) -> dict:
         return {
             "name": "FireworksFace",
@@ -41,7 +41,7 @@ class FirecrackersFace(StandardPlugin):
         return "OK"
 
     def getPluginInfo(
-        self,
+            self,
     ) -> dict:
         return {
             "name": "FirecrackersFace",
@@ -67,7 +67,7 @@ class BasketballFace(StandardPlugin):
         return "OK"
 
     def getPluginInfo(
-        self,
+            self,
     ) -> dict:
         return {
             "name": "BasketballFace",
@@ -93,7 +93,7 @@ class HotFace(StandardPlugin):
         return "OK"
 
     def getPluginInfo(
-        self,
+            self,
     ) -> dict:
         return {
             "name": "HotFace",
@@ -119,7 +119,7 @@ class FlowerFace(StandardPlugin):
         return "OK"
 
     def getPluginInfo(
-        self,
+            self,
     ) -> dict:
         return {
             "name": "FlowerFace",
@@ -145,7 +145,7 @@ class TouchFace(StandardPlugin):
         return "OK"
 
     def getPluginInfo(
-        self,
+            self,
     ) -> dict:
         return {
             "name": "TouchFace",
@@ -172,7 +172,7 @@ class VegDog(StandardPlugin):
         return "OK"
 
     def getPluginInfo(
-        self,
+            self,
     ) -> dict:
         return {
             "name": "VegDog",
@@ -198,7 +198,7 @@ class BirthdayCake(StandardPlugin):
         return "OK"
 
     def getPluginInfo(
-        self,
+            self,
     ) -> dict:
         return {
             "name": "BirthdayCake",
@@ -224,7 +224,7 @@ class GoHome(StandardPlugin):
         return "OK"
 
     def getPluginInfo(
-        self,
+            self,
     ) -> dict:
         return {
             "name": "GoHome",
@@ -254,7 +254,7 @@ class ff98sha(StandardPlugin):
         return "OK"
 
     def getPluginInfo(
-        self,
+            self,
     ) -> dict:
         return {
             "name": "ff98sha",
