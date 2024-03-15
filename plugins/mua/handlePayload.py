@@ -236,7 +236,7 @@ def handle_payload_fn(session_id, payload):
             if succ:
                 send(
                     data["target"],
-                    f"[CQ:image,file=files:///{savePath}]",
+                    f"[CQ:image,file=file:///{savePath}]",
                     data["message_type"],
                 )
             else:
@@ -256,7 +256,7 @@ def handle_payload_fn(session_id, payload):
                 if succ:
                     if shouldSend:
                         send(groupId, "检测到MUA通知更新：")
-                        send(groupId, f"[CQ:image,file=files:///{savePath}]")
+                        send(groupId, f"[CQ:image,file=file:///{savePath}]")
                 elif not warninged:
                     warninged = True
                     warning(f"mua图片绘制失败: {result}")

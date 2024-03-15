@@ -4,6 +4,7 @@
     "backend-url": "if lagrange, use 'ws://ip:port/(path-prefix)', elif gocqhttp, use 'http(s)://ip:port/(path-prefix)'",
     "sql": {
         "host": "host ip, like '127.0.0.1'",
+        "port": 3306,
         "user": "mysql user, like 'root'",
         "passwd": "mysql password"
     },

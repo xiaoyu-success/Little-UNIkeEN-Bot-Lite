@@ -40,6 +40,7 @@ VERSION_TXT = """version：muaLite版本，NJFU基于Little-UNIkeEN-Bot的muaLTS
 
 sqlConfig = {
     'host': '127.0.0.1',
+    'port': '3306',
     'user': 'root',
     'passwd': ''  # bot的sql密码是多少
 }
@@ -63,9 +64,11 @@ def setConfigs(config: Dict[str, Any]) -> None:
     BOT_SELF_QQ = config.get('qq', None)
     assert isinstance(BOT_SELF_QQ, int)
     sqlConfig['host'] = config.get('sql', {}).get('host', None)
+    sqlConfig['port'] = config.get('sql', {}).get('port', None)
     sqlConfig['user'] = config.get('sql', {}).get('user', None)
     sqlConfig['passwd'] = config.get('sql', {}).get('passwd', None)
     assert isinstance(sqlConfig['host'], str)
+    assert isinstance(sqlConfig['port'], str)
     assert isinstance(sqlConfig['passwd'], str)
     assert isinstance(sqlConfig['user'], str)
 
